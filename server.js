@@ -38,15 +38,15 @@ function loadBpmDataFromFiles() {
           
           if (match) {
               const [, , id, bpm, timestamp] = match;
-              const userId = `user${id}`;
               
-              if (bpmData[userId]) {
-                  bpmData[userId].data.push(parseInt(bpm));
+              if (bpmData[id]) {
+                  bpmData[id].data.push(parseInt(bpm));
+                  bpmData[id].time.push(new Date(parseInt(timestamp)).toISOString());
               } else {
-                  bpmData[userId] = {
-                    name: `Siège ${userId}`,
+                  bpmData[id] = {
+                    name: `Siège ${id}`,
                     data: [parseInt(bpm)],
-                    time: new Date(parseInt(timestamp, 10)).toISOString()  // Converts to ISO
+                    time: [new Date(parseInt(timestamp)).toISOString()]  // Converts to ISO
                   }
               }
           }
@@ -117,14 +117,6 @@ app.get('/api/users', (req, res) => {
 // NOUVELLE ROUTE: Authentification automatique via lien direct avec interface identique
 app.get('/auth/:userId', (req, res) => {
   let { userId } = req.params;
-  
-  // Convertir l'ID numérique en format userX si nécessaire
-  if (/^\d+$/.test(userId)) {
-    const seatNumber = parseInt(userId);
-    if (seatNumber >= 1 && seatNumber <= NUM_SEATS) {
-      userId = `user${seatNumber}`;
-    }
-  }
 
   if (!bpmData[userId]) {
     res.status(404).send(`
