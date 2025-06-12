@@ -125,8 +125,248 @@ app.get('/api/users', (req, res) => {
   res.json({ users, totalSeats: NUM_SEATS });
 });
 
-// TODO:
-// Routes d'accès direct
+// NOUVELLE ROUTE: Authentification automatique via lien direct avec interface identique
+app.get('/auth/:userId', (req, res) => {
+  let { userId } = req.params;
+  
+  // Convertir l'ID numérique en format userX si nécessaire
+  if (/^\d+$/.test(userId)) {
+    const seatNumber = parseInt(userId);
+    if (seatNumber >= 1 && seatNumber <= NUM_SEATS) {
+      userId = `user${seatNumber}`;
+    }
+  }
+
+  if (!bpmData[userId]) {
+    res.status(404).send(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Erreur - BPM</title>
+        <style>
+          body { font-family: Arial, sans-serif; background: #f0f0f0; padding: 20px; text-align: center; }
+          .container { background: white; padding: 30px; border-radius: 10px; max-width: 500px; margin: auto; }
+          .error { color: #721c24; background: #f8d7da; padding: 15px; border-radius: 5px; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <h2>❌ Utilisateur non trouvé</h2>
+          <div class="error">L'identifiant "${req.params.userId}" n'existe pas.</div>
+          <p>Identifiants valides : 1 à ${NUM_SEATS}</p>
+          <a href="/">← Retour à l'accueil</a>
+        </div>
+      </body>
+      </html>
+    `);
+    return;
+  }
+
+  const validUsersArray = Object.keys(bpmData);
+  const validUsersString = validUsersArray.map(u => `'${u}'`).join(', ');
+
+  res.send(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Prototype Emotional Map</title>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+        <style>
+            body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+            .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; }
+            .auth-section { margin-bottom: 30px; padding: 20px; background: #e8f4fd; border-radius: 8px; }
+            .chart-container { margin: 20px 0; }
+            button { padding: 10px 20px; margin: 5px; border: none; border-radius: 5px; cursor: pointer; }
+            .btn-primary { background: #007bff; color: white; }
+            .btn-success { background: #28a745; color: white; }
+            .status { padding: 10px; margin: 10px 0; border-radius: 5px; }
+            .success { background: #d4edda; color: #155724; }
+            .error { background: #f8d7da; color: #721c24; }
+            .info { background: #d1ecf1; color: #0c5460; padding: 10px; border-radius: 5px; margin: 10px 0; }
+        </style>
+    </head>
+    <body>
+      <div class="container">
+        <h1>🫀 Prototype Emotional Map</h1>
+        
+        <div class="info">
+          <strong>Configuration:</strong> ${NUM_SEATS} sièges disponibles (identifiants: 1 à ${NUM_SEATS})
+        </div>
+
+        <!-- Formulaire d'authentification masqué -->
+        <div id="authSection" style="display:none;">
+          <h3>Authentification</h3>
+          <input type="text" id="userIdInput" placeholder="Entrez votre identifiant (1 à ${NUM_SEATS})" />
+          <button class="btn-primary" onclick="authenticateUser()">Se connecter</button>
+          <div id="authStatus"></div>
+        </div>
+
+        <!-- Section principale -->
+        <div id="mainSection">
+          <div class="chart-container">
+            <h3 id="chartTitle">Sélectionnez un profil</h3>
+            <canvas id="bpmChart" width="400" height="200"></canvas>
+          </div>
+
+          <button class="btn-success" onclick="logout()">Déconnexion</button>
+        </div>
+      </div>
+
+    <script>
+      let chart = null;
+      let currentUser = '${userId}';
+      let connectionCount = 1;
+
+      const validUsers = [${validUsersString}];
+
+      // Authentification automatique au chargement de la page
+      window.onload = function() {
+        authenticateUserAuto('${userId}');
+      };
+
+      function authenticateUserAuto(userId) {
+        fetch(\`/api/auth/\${userId}\`)
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              currentUser = userId;
+              connectionCount++;
+              loadBpmData(userId);
+            } else {
+              console.error('Échec authentification automatique');
+            }
+          })
+          .catch(error => {
+            console.error('Erreur authentification automatique:', error);
+          });
+      }
+
+      function authenticateUser() {
+        let userId = document.getElementById('userIdInput').value.trim();
+        const statusDiv = document.getElementById('authStatus');
+
+        // Convertir l'ID numérique en format userX
+        if (/^\d+$/.test(userId)) {
+          const seatNumber = parseInt(userId);
+          if (seatNumber >= 1 && seatNumber <= ${NUM_SEATS}) {
+            userId = \`user\${seatNumber}\`;
+          }
+        }
+
+        if (!validUsers.includes(userId)) {
+          statusDiv.innerHTML = '<div class="status error">❌ Identifiant invalide. Utilisez un nombre de 1 à ${NUM_SEATS}.</div>';
+          return;
+        }
+
+        fetch(\`/api/auth/\${userId}\`)
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              statusDiv.innerHTML = \`<div class="status success">✅ Authentifié: \${data.profile} (QR: \${data.qrCode})</div>\`;
+              currentUser = userId;
+              connectionCount++;
+              showMainSection();
+              loadBpmData(userId);
+            } else {
+              statusDiv.innerHTML = '<div class="status error">❌ Échec authentification</div>';
+            }
+          })
+          .catch(error => {
+            console.error('Erreur:', error);
+            statusDiv.innerHTML = '<div class="status error">❌ Erreur réseau</div>';
+          });
+      }
+
+      function showMainSection() {
+        document.getElementById('authSection').style.display = 'none';
+        document.getElementById('mainSection').style.display = 'block';
+      }
+
+      function logout() {
+        currentUser = null;
+        connectionCount = 0;
+        if(chart) {
+          chart.destroy();
+          chart = null;
+        }
+        document.getElementById('chartTitle').textContent = 'Sélectionnez un profil';
+        window.location.href = '/';
+      }
+
+      function loadBpmData(userId) {
+        fetch(\`/api/bpm/\${userId}\`)
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              document.getElementById('chartTitle').textContent = \`📊 \${data.profile} - BPM au cours du spectacle\`;
+              updateChart(data.bpmData, data.profile);
+            }
+          })
+          .catch(error => console.error('Erreur BPM:', error));
+      }
+
+      function updateChart(bpmData, profileName) {
+        const labels = bpmData.map((_, index) => \`T\${index + 1}\`);
+
+        if (chart) {
+          chart.destroy();
+        }
+
+        chart = new Chart(document.getElementById('bpmChart').getContext('2d'), {
+          type: 'line',
+          data: {
+            labels: labels,
+            datasets: [{
+              label: profileName,
+              data: bpmData,
+              borderColor: '#36A2EB',
+              backgroundColor: 'rgba(54, 162, 235, 0.1)',
+              borderWidth: 2,
+              fill: true,
+              tension: 0.4
+            }]
+          },
+          options: {
+            responsive: true,
+            scales: {
+              y: {
+                beginAtZero: false,
+                min: 50,
+                max: 180,
+                title: {
+                  display: true,
+                  text: 'BPM'
+                }
+              },
+              x: {
+                title: {
+                  display: true,
+                  text: 'Temps'
+                }
+              }
+            },
+            plugins: {
+              legend: {
+                display: false  // Légende masquée
+              }
+            }
+          }
+        });
+      }
+
+      // Mise à jour automatique toutes les 5 secondes
+      setInterval(() => {
+//        if (currentUser) {
+//          loadBpmData(currentUser);
+//        }
+      }, 5000);
+    </script>
+    </body>
+    </html>
+  `);
+});
+
+// Routes d'accès direct (version simplifiée)
 app.get('/user/:userId', (req, res) => {
   const { userId } = req.params;
 
@@ -152,11 +392,17 @@ app.get('/user/:userId', (req, res) => {
         .container { background: white; padding: 20px; border-radius: 10px; max-width: 700px; margin: auto; }
         h1 { font-size: 24px; }
         canvas { margin-top: 20px; }
+        .nav { margin-bottom: 15px; }
+        .nav a { color: #007bff; text-decoration: none; }
       </style>
     </head>
     <body>
       <div class="container">
-        <h1>✅ Authentifié automatiquement : ${userProfile}</h1>
+        <div class="nav">
+          <a href="/auth/${userId}">← Version complète avec interface</a> |
+          <a href="/">← Accueil</a>
+        </div>
+        <h1>✅ ${userProfile} - Vue simplifiée</h1>
         <p><strong>Utilisateur:</strong> ${userId}</p>
         <canvas id="bpmChart" width="600" height="300"></canvas>
       </div>
@@ -192,12 +438,11 @@ app.get('/user/:userId', (req, res) => {
   `);
 });
 
-
-// Route principale
+// Route principale avec liens directs
 app.get('/', (req, res) => {
   const validUsersArray = Object.keys(bpmData);
   const validUsersString = validUsersArray.map(u => `'${u}'`).join(', ');
-  
+    
   res.send(`
     <!DOCTYPE html>
     <html>
@@ -208,6 +453,7 @@ app.get('/', (req, res) => {
             body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
             .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; }
             .auth-section { margin-bottom: 30px; padding: 20px; background: #e8f4fd; border-radius: 8px; }
+            .links-section { margin-bottom: 30px; padding: 20px; background: #e8f5e8; border-radius: 8px; }
             .chart-container { margin: 20px 0; }
             button { padding: 10px 20px; margin: 5px; border: none; border-radius: 5px; cursor: pointer; }
             .btn-primary { background: #007bff; color: white; }
@@ -228,7 +474,7 @@ app.get('/', (req, res) => {
 
         <!-- Formulaire d'authentification -->
         <div id="authSection">
-          <h3>Authentification</h3>
+          <h3>Authentification manuelle</h3>
           <input type="text" id="userIdInput" placeholder="Entrez votre identifiant (1 à ${NUM_SEATS})" />
           <button class="btn-primary" onclick="authenticateUser()">Se connecter</button>
           <div id="authStatus"></div>
@@ -370,9 +616,7 @@ app.get('/', (req, res) => {
 
       // Mise à jour automatique toutes les 5 secondes
       setInterval(() => {
-//        if (currentUser) {
-//          loadBpmData(currentUser);
-//        }
+  
       }, 5000);
     </script>
     </body>
