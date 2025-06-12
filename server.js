@@ -22,53 +22,40 @@ function getNumSeatsFromArgs() {
 app.use(express.static('public'));
 app.use(express.json());
 
-// Fonction pour charger les données BPM depuis les fichiers
+// Fonction pour charger les données BPM depuis le recording de vib-eMotion
 function loadBpmDataFromFiles() {
+
   const bpmData = {};
-  
-  for (let i = 1; i <= NUM_SEATS; i++) {
-    const userId = `user${i}`;
-    const filename = `data/seat_${i}.json`;
-    
-    try {
-      if (fs.existsSync(filename)) {
-        const fileContent = fs.readFileSync(filename, 'utf8');
-        const data = JSON.parse(fileContent);
-        bpmData[userId] = {
-          name: `Siège ${i}`,
-          data: data.bpmData || []
-        };
-        console.log(`✅ Données chargées pour ${userId} depuis ${filename}`);
-      } else {
-        // Créer un fichier exemple s'il n'existe pas
-        const exampleData = {
-          name: `Siège ${i}`,
-          bpmData: generateExampleBpmData()
-        };
-        
-        // Créer le dossier data s'il n'existe pas
-        const dataDir = path.dirname(filename);
-        if (!fs.existsSync(dataDir)) {
-          fs.mkdirSync(dataDir, { recursive: true });
-        }
-        
-        fs.writeFileSync(filename, JSON.stringify(exampleData, null, 2));
-        bpmData[userId] = {
-          name: `Siège ${i}`,
-          data: exampleData.bpmData
-        };
-        console.log(`📝 Fichier exemple créé pour ${userId}: ${filename}`);
+  const filePath = path.join(__dirname, 'data', 'bpm_data.txt');
+
+  try {
+    const fileContent = fs.readFileSync(filePath, 'utf-8');
+    const lines = fileContent.split('\n');
+
+      for (const line of lines) {
+          // Match pattern like: "77, /98/ 66 1749735435400.;"
+          const match = line.match(/^(\d+),\s*\/(\d+)\/\s+(\d+)\s+(\d+)\.;/);
+          
+          if (match) {
+              const [, , id, bpm, timestamp] = match;
+              const userId = `user${id}`;
+              
+              if (bpmData[userId]) {
+                  bpmData[userId].data.push(parseInt(bpm));
+              } else {
+                  bpmData[userId] = {
+                    name: `Siège ${userId}`,
+                    data: [parseInt(bpm)],
+                    time: new Date(parseInt(timestamp, 10)).toISOString()  // Converts to ISO
+                  }
+              }
+          }
       }
-    } catch (error) {
-      console.error(`❌ Erreur lors du chargement de ${filename}:`, error.message);
-      // Données par défaut en cas d'erreur
-      bpmData[userId] = {
-        name: `Siège ${i}`,
-        data: generateExampleBpmData()
-      };
-    }
+      
+  } catch (err) {
+    console.error('Error reading or parsing the file:', err);
   }
-  
+
   return bpmData;
 }
 
@@ -101,8 +88,10 @@ app.get('/api/bpm/:userId', (req, res) => {
   
   if (bpmData[userId]) {
     // Simulation - ajoute un peu de variation
-    const variation = Math.floor(Math.random() * 6) - 3;
-    const currentData = bpmData[userId].data.map(val => val + variation);
+    //const variation = Math.floor(Math.random() * 6) - 3;
+    //const currentData = bpmData[userId].data.map(val => val + variation);
+      
+    const currentData = bpmData[userId].data;
     
     res.json({
       success: true,
@@ -356,9 +345,7 @@ app.get('/auth/:userId', (req, res) => {
 
       // Mise à jour automatique toutes les 5 secondes
       setInterval(() => {
-//        if (currentUser) {
-//          loadBpmData(currentUser);
-//        }
+  
       }, 5000);
     </script>
     </body>
