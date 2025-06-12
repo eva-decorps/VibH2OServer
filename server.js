@@ -125,6 +125,74 @@ app.get('/api/users', (req, res) => {
   res.json({ users, totalSeats: NUM_SEATS });
 });
 
+// TODO:
+// Routes d'accès direct
+app.get('/user/:userId', (req, res) => {
+  const { userId } = req.params;
+
+  if (!bpmData[userId]) {
+    res.status(404).send('<h2>❌ Utilisateur non trouvé</h2>');
+    return;
+  }
+
+  const userProfile = bpmData[userId].name;
+  const bpmValues = bpmData[userId].data;
+  const labels = bpmValues.map((_, i) => `T${i + 1}`);
+  const bpmString = JSON.stringify(bpmValues);
+  const labelString = JSON.stringify(labels);
+
+  res.send(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>${userProfile} - BPM</title>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+      <style>
+        body { font-family: Arial, sans-serif; background: #f0f0f0; padding: 20px; }
+        .container { background: white; padding: 20px; border-radius: 10px; max-width: 700px; margin: auto; }
+        h1 { font-size: 24px; }
+        canvas { margin-top: 20px; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <h1>✅ Authentifié automatiquement : ${userProfile}</h1>
+        <p><strong>Utilisateur:</strong> ${userId}</p>
+        <canvas id="bpmChart" width="600" height="300"></canvas>
+      </div>
+      <script>
+        const ctx = document.getElementById('bpmChart').getContext('2d');
+        const bpmData = ${bpmString};
+        const labels = ${labelString};
+
+        new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: labels,
+            datasets: [{
+              label: '${userProfile}',
+              data: bpmData,
+              borderColor: '#36A2EB',
+              backgroundColor: 'rgba(54, 162, 235, 0.1)',
+              fill: true,
+              tension: 0.4
+            }]
+          },
+          options: {
+            responsive: true,
+            scales: {
+              y: { min: 50, max: 180 },
+              x: { title: { display: true, text: 'Temps' } }
+            }
+          }
+        });
+      </script>
+    </body>
+    </html>
+  `);
+});
+
+
 // Route principale
 app.get('/', (req, res) => {
   const validUsersArray = Object.keys(bpmData);
