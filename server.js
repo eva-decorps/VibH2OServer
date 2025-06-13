@@ -77,6 +77,7 @@ app.get('/api/auth/:userId', (req, res) => {
   }
 });
 
+// Get bpm data
 app.get('/api/bpm/:userId', (req, res) => {
   const { userId } = req.params;
   
@@ -86,23 +87,13 @@ app.get('/api/bpm/:userId', (req, res) => {
       userId: userId,
       profile: bpmData[userId].name,
       bpmData: bpmData[userId].data,
-      timestamp: new Date().toISOString()
+      time: bpmData[userId].timestamp
     });
   } else {
     res.status(404).json({ success: false, message: 'Données BPM non trouvées' });
   }
 });
 
-// Route pour obtenir la liste des utilisateurs disponibles
-app.get('/api/users', (req, res) => {
-  const users = Object.keys(bpmData).map(userId => ({
-    id: userId,
-    name: bpmData[userId].name
-  }));
-  res.json({ users, totalSeats: NUM_SEATS });
-});
-
-// TODO: faire un fichier html externe pour pas avoir de redite
 // Authentification automatique via lien direct avec interface identique
 app.get('/auth/:userId', (req, res) => {
   let { userId } = req.params;
@@ -137,7 +128,6 @@ app.get('/auth/:userId', (req, res) => {
 
   res.send(`
     <!DOCTYPE html>
-    <html>
     <head>
         <title>Prototype Emotional Map</title>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
@@ -334,7 +324,7 @@ app.get('/auth/:userId', (req, res) => {
   `);
 });
 
-// Routes d'accès direct (version simplifiée)
+// Routes d'accès direct
 app.get('/user/:userId', (req, res) => {
   const { userId } = req.params;
 
@@ -355,61 +345,8 @@ app.get('/user/:userId', (req, res) => {
   const bpmString = JSON.stringify(bpmValues);
   const labelString = JSON.stringify(labels);
 
-  res.send(`
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <title>${userProfile} - BPM</title>
-      <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
-      <style>
-        body { font-family: Arial, sans-serif; background: #f0f0f0; padding: 20px; }
-        .container { background: white; padding: 20px; border-radius: 10px; max-width: 700px; margin: auto; }
-        h1 { font-size: 24px; }
-        canvas { margin-top: 20px; }
-        .nav { margin-bottom: 15px; }
-        .nav a { color: #007bff; text-decoration: none; }
-      </style>
-    </head>
-    <body>
-      <div class="container">
-        <div class="nav">
-          <a href="/auth/${userId}">← Version complète avec interface</a> |
-          <a href="/">← Accueil</a>
-        </div>
-        <h1>✅ ${userProfile} - Vue simplifiée</h1>
-        <p><strong>Utilisateur:</strong> ${userId}</p>
-        <canvas id="bpmChart" width="600" height="300"></canvas>
-      </div>
-      <script>
-        const ctx = document.getElementById('bpmChart').getContext('2d');
-        const bpmData = ${bpmString};
-        const labels = ${labelString};
-
-        new Chart(ctx, {
-          type: 'line',
-          data: {
-            labels: labels,
-            datasets: [{
-              label: '${userProfile}',
-              data: bpmData,
-              borderColor: '#36A2EB',
-              backgroundColor: 'rgba(54, 162, 235, 0.1)',
-              fill: true,
-              tension: 0.4
-            }]
-          },
-          options: {
-            responsive: true,
-            scales: {
-              y: { min: 50, max: 180 },
-              x: { title: { display: true, text: 'Temps' } }
-            }
-          }
-        });
-      </script>
-    </body>
-    </html>
-  `);
+  // Redirection
+  res.redirect(`/auth/${match[1]}`);
 });
 
 // Route principale avec liens directs
