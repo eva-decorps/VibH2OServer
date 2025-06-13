@@ -30,7 +30,7 @@ function loadBpmDataFromFiles() {
               
               if (bpmData[id]) {
                   bpmData[id].data.push(parseInt(bpm));
-                  bpmData[id].time.push(new Date(parseInt(timestamp)).toISOString());
+                  bpmData[id].time.push(parseInt(timestamp)); // Unix timestamp format
               } else {
                   
                   if (id > maxSeat) {
@@ -40,7 +40,7 @@ function loadBpmDataFromFiles() {
                   bpmData[id] = {
                     name: `Siège ${id}`,
                     data: [parseInt(bpm)],
-                    time: [new Date(parseInt(timestamp)).toISOString()]  // Converts to ISO
+                    time: [parseInt(timestamp)] // Unix timestamp format
                   }
               }
           }
@@ -87,7 +87,7 @@ app.get('/api/bpm/:userId', (req, res) => {
       userId: userId,
       profile: bpmData[userId].name,
       bpmData: bpmData[userId].data,
-      time: bpmData[userId].timestamp
+      time: bpmData[userId].time
     });
   } else {
     res.status(404).json({ success: false, message: 'Données BPM non trouvées' });
@@ -259,14 +259,27 @@ app.get('/auth/:userId', (req, res) => {
           .then(data => {
             if (data.success) {
               document.getElementById('chartTitle').textContent = \`📊 \${data.profile} - BPM au cours du spectacle\`;
-              updateChart(data.bpmData, data.profile);
+              updateChart(data.bpmData, data.time, data.profile);
             }
           })
           .catch(error => console.error('Erreur BPM:', error));
       }
 
-      function updateChart(bpmData, profileName) {
-        const labels = bpmData.map((_, index) => \`T\${index + 1}\`);
+      function updateChart(bpmData, time, profileName) {
+        // Prendre le premier timestamp comme origine
+        const startTime = time[0];
+  
+        //console.log('bpmData:', bpmData);
+        console.log('time:', time[0]);
+  
+        // Convertir les timestamps en temps relatif depuis le début (en heures:minutes)
+        const labels = time.map(timestamp => {
+          const elapsedSeconds = (timestamp - startTime)/1000;
+          const hours = Math.floor(elapsedSeconds / 3600);
+          const minutes = Math.floor((elapsedSeconds % 3600) / 60);
+        
+          return hours + ':' + minutes.toString().padStart(2, '0');
+        });
 
         if (chart) {
           chart.destroy();
@@ -283,7 +296,9 @@ app.get('/auth/:userId', (req, res) => {
               backgroundColor: 'rgba(54, 162, 235, 0.1)',
               borderWidth: 2,
               fill: true,
-              tension: 0.4
+              tension: 0.4,
+              pointRadius: 0,           // Masque les points
+              pointHoverRadius: 5       // Affiche les points seulement au survol
             }]
           },
           options: {
@@ -301,7 +316,12 @@ app.get('/auth/:userId', (req, res) => {
               x: {
                 title: {
                   display: true,
-                  text: 'Temps'
+                  text: 'Temps écoulé (h:min)'
+                },
+                ticks: {
+                  maxTicksLimit: 10, // Limite le nombre de labels affichés pour éviter l'encombrement
+                  maxRotation: 45,   // Rotation des labels si nécessaire
+                  minRotation: 0
                 }
               }
             },
@@ -470,14 +490,27 @@ app.get('/', (req, res) => {
           .then(data => {
             if (data.success) {
               document.getElementById('chartTitle').textContent = \`📊 \${data.profile} - BPM au cours du spectacle\`;
-              updateChart(data.bpmData, data.profile);
+              updateChart(data.bpmData, data.time, data.profile);
             }
           })
           .catch(error => console.error('Erreur BPM:', error));
       }
 
-      function updateChart(bpmData, profileName) {
-        const labels = bpmData.map((_, index) => \`T\${index + 1}\`);
+      function updateChart(bpmData, time, profileName) {
+        // Prendre le premier timestamp comme origine
+        const startTime = time[0];
+  
+        //console.log('bpmData:', bpmData);
+        console.log('time:', time[0]);
+  
+        // Convertir les timestamps en temps relatif depuis le début (en heures:minutes)
+        const labels = time.map(timestamp => {
+          const elapsedSeconds = (timestamp - startTime)/1000;
+          const hours = Math.floor(elapsedSeconds / 3600);
+          const minutes = Math.floor((elapsedSeconds % 3600) / 60);
+        
+          return hours + ':' + minutes.toString().padStart(2, '0');
+        });
 
         if (chart) {
           chart.destroy();
@@ -494,7 +527,9 @@ app.get('/', (req, res) => {
               backgroundColor: 'rgba(54, 162, 235, 0.1)',
               borderWidth: 2,
               fill: true,
-              tension: 0.4
+              tension: 0.4,
+              pointRadius: 0,           // Masque les points
+              pointHoverRadius: 5       // Affiche les points seulement au survol
             }]
           },
           options: {
@@ -512,7 +547,12 @@ app.get('/', (req, res) => {
               x: {
                 title: {
                   display: true,
-                  text: 'Temps'
+                  text: 'Temps écoulé (h:min)'
+                },
+                ticks: {
+                  maxTicksLimit: 10, // Limite le nombre de labels affichés pour éviter l'encombrement
+                  maxRotation: 45,   // Rotation des labels si nécessaire
+                  minRotation: 0
                 }
               }
             },
