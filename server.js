@@ -54,13 +54,84 @@ function loadBpmDataFromFiles() {
     console.error('Error no data in the file');
   }
 
-  return [bpmData, maxSeat];
+  // Calcul de la moyenne des BPM de toutes les personnes
+  const averageBpm = calculateAverageBpm(bpmData, 1000); // Intervalle de 1 seconde (1000ms)
+
+  return [bpmData, maxSeat, averageBpm];
+}
+
+// Fonction pour calculer la moyenne des BPM de tous les utilisateurs
+function calculateAverageBpm(bpmData, intervalMs = 1000) {
+  const userIds = Object.keys(bpmData);
+  
+  if (userIds.length === 0) {
+    return { data: [], time: [] };
+  }
+
+  // Trouver la plage temporelle globale
+  let minTimestamp = Infinity;
+  let maxTimestamp = -Infinity;
+  
+  userIds.forEach(id => {
+    const times = bpmData[id].time;
+    if (times.length > 0) {
+      minTimestamp = Math.min(minTimestamp, Math.min(...times));
+      maxTimestamp = Math.max(maxTimestamp, Math.max(...times));
+    }
+  });
+
+  if (minTimestamp === Infinity) {
+    return { data: [], time: [] };
+  }
+
+  const averageData = [];
+  const averageTime = [];
+
+  // Parcourir par intervalles de temps
+  for (let currentTime = minTimestamp; currentTime <= maxTimestamp; currentTime += intervalMs) {
+    const intervalEnd = currentTime + intervalMs;
+    const userAverages = [];
+
+    // Pour chaque utilisateur, calculer sa moyenne sur cet intervalle
+    userIds.forEach(id => {
+      const userData = bpmData[id];
+      const bpmValuesInInterval = [];
+
+      // Trouver toutes les valeurs BPM dans cet intervalle
+      for (let i = 0; i < userData.time.length; i++) {
+        const timestamp = userData.time[i];
+        if (timestamp >= currentTime && timestamp < intervalEnd) {
+          bpmValuesInInterval.push(userData.data[i]);
+        }
+      }
+
+      // Si l'utilisateur a des données dans cet intervalle, calculer sa moyenne
+      if (bpmValuesInInterval.length > 0) {
+        const userAverage = bpmValuesInInterval.reduce((sum, bpm) => sum + bpm, 0) / bpmValuesInInterval.length;
+        userAverages.push(userAverage);
+      }
+    });
+
+    // Si au moins un utilisateur a des données dans cet intervalle
+    if (userAverages.length > 0) {
+      const globalAverage = userAverages.reduce((sum, avg) => sum + avg, 0) / userAverages.length;
+      averageData.push(Math.round(globalAverage * 100) / 100); // Arrondi à 2 décimales
+      averageTime.push(currentTime);
+    }
+  }
+
+  return {
+    name: 'Moyenne globale',
+    data: averageData,
+    time: averageTime
+  };
 }
 
 // Chargement des données BPM
 const data = loadBpmDataFromFiles();
 const bpmData = data[0];
 const NUM_SEATS = data[1];
+const avgBpm = data[2];
 
 // Routes API connection
 app.get('/api/auth/:userId', (req, res) => {
@@ -87,7 +158,9 @@ app.get('/api/bpm/:userId', (req, res) => {
       userId: userId,
       profile: bpmData[userId].name,
       bpmData: bpmData[userId].data,
-      time: bpmData[userId].time
+      time: bpmData[userId].time,
+      avg: avgBpm.data,
+      avgTime: avgBpm.time
     });
   } else {
     res.status(404).json({ success: false, message: 'Données BPM non trouvées' });
@@ -259,18 +332,15 @@ app.get('/auth/:userId', (req, res) => {
           .then(data => {
             if (data.success) {
               document.getElementById('chartTitle').textContent = \`📊 \${data.profile} - BPM au cours du spectacle\`;
-              updateChart(data.bpmData, data.time, data.profile);
+              updateChart(data.bpmData, data.time, data.profile, data.avg, data.avgTime);
             }
           })
           .catch(error => console.error('Erreur BPM:', error));
       }
 
-      function updateChart(bpmData, time, profileName) {
+      function updateChart(bpmData, time, profileName, avgBpm, avgTime) {
         // Prendre le premier timestamp comme origine
         const startTime = time[0];
-  
-        //console.log('bpmData:', bpmData);
-        console.log('time:', time[0]);
   
         // Convertir les timestamps en temps relatif depuis le début (en heures:minutes)
         const labels = time.map(timestamp => {
@@ -280,26 +350,62 @@ app.get('/auth/:userId', (req, res) => {
         
           return hours + ':' + minutes.toString().padStart(2, '0');
         });
+//  
+//        avgLabels = avgTime.map(timestamp => {
+//          const elapsedSeconds = timestamp - startTime;
+//          const hours = Math.floor(elapsedSeconds / 3600);
+//          const minutes = Math.floor((elapsedSeconds % 3600) / 60);
+//          
+//          return hours + ':' + minutes.toString().padStart(2, '0');
+//        });
+  
+        const bpmPoints = time.map((t, i) => ({
+          x: (t - time[0]) / 60000, // temps relatif en minutes
+          y: bpmData[i]
+        }));
 
+        const avgPoints = avgTime.map((t, i) => ({
+          x: (t - time[0]) / 60000,
+          y: avgBpm[i]
+        }));
+  
+        // Préparer les datasets avec leurs propres labels
+        const datasets = [
+            {
+            label: profileName,
+            data: bpmPoints,
+            borderColor: '#36A2EB',
+            backgroundColor: 'rgba(54, 162, 235, 0.1)',
+            fill: true,
+            tension: 0.4,
+            pointRadius: 0,
+            pointHoverRadius: 5,
+            parsing: false // Indique à Chart.js qu'on fournit {x,y}
+            },
+            {
+            label: 'Moyenne public',
+            data: avgPoints,
+            borderColor: '#FF6384',
+            backgroundColor: 'rgba(255, 99, 132, 0.1)',
+            fill: false,
+            tension: 0.4,
+            pointRadius: 0,
+            pointHoverRadius: 5,
+            borderDash: [5, 5],
+            parsing: false
+            }
+        ];
+
+  
         if (chart) {
-          chart.destroy();
+            chart.destroy();
         }
-
+  
         chart = new Chart(document.getElementById('bpmChart').getContext('2d'), {
           type: 'line',
           data: {
             labels: labels,
-            datasets: [{
-              label: profileName,
-              data: bpmData,
-              borderColor: '#36A2EB',
-              backgroundColor: 'rgba(54, 162, 235, 0.1)',
-              borderWidth: 2,
-              fill: true,
-              tension: 0.4,
-              pointRadius: 0,           // Masque les points
-              pointHoverRadius: 5       // Affiche les points seulement au survol
-            }]
+            datasets: datasets
           },
           options: {
             responsive: true,
@@ -314,20 +420,13 @@ app.get('/auth/:userId', (req, res) => {
                 }
               },
               x: {
+                type: 'linear',
+                min: 0,
+                max: Math.max(...bpmPoints.map(p => p.x), ...avgPoints.map(p => p.x)),
                 title: {
                   display: true,
-                  text: 'Temps écoulé (h:min)'
-                },
-                ticks: {
-                  maxTicksLimit: 10, // Limite le nombre de labels affichés pour éviter l'encombrement
-                  maxRotation: 45,   // Rotation des labels si nécessaire
-                  minRotation: 0
+                  text: 'Temps écoulé (min)'
                 }
-              }
-            },
-            plugins: {
-              legend: {
-                display: false  // Légende masquée
               }
             }
           }
@@ -484,87 +583,113 @@ app.get('/', (req, res) => {
         document.getElementById('authSection').style.display = 'block';
       }
 
-      function loadBpmData(userId) {
-        fetch(\`/api/bpm/\${userId}\`)
-          .then(response => response.json())
-          .then(data => {
-            if (data.success) {
-              document.getElementById('chartTitle').textContent = \`📊 \${data.profile} - BPM au cours du spectacle\`;
-              updateChart(data.bpmData, data.time, data.profile);
-            }
-          })
-          .catch(error => console.error('Erreur BPM:', error));
-      }
+       function loadBpmData(userId) {
+         fetch(\`/api/bpm/\${userId}\`)
+           .then(response => response.json())
+           .then(data => {
+             if (data.success) {
+               document.getElementById('chartTitle').textContent = \`📊 \${data.profile} - BPM au cours du spectacle\`;
+               updateChart(data.bpmData, data.time, data.profile, data.avg, data.avgTime);
+             }
+           })
+           .catch(error => console.error('Erreur BPM:', error));
+       }
 
-      function updateChart(bpmData, time, profileName) {
-        // Prendre le premier timestamp comme origine
-        const startTime = time[0];
+       function updateChart(bpmData, time, profileName, avgBpm, avgTime) {
+         // Prendre le premier timestamp comme origine
+         const startTime = time[0];
+   
+         // Convertir les timestamps en temps relatif depuis le début (en heures:minutes)
+         const labels = time.map(timestamp => {
+           const elapsedSeconds = (timestamp - startTime)/1000;
+           const hours = Math.floor(elapsedSeconds / 3600);
+           const minutes = Math.floor((elapsedSeconds % 3600) / 60);
+         
+           return hours + ':' + minutes.toString().padStart(2, '0');
+         });
+ //
+ //        avgLabels = avgTime.map(timestamp => {
+ //          const elapsedSeconds = timestamp - startTime;
+ //          const hours = Math.floor(elapsedSeconds / 3600);
+ //          const minutes = Math.floor((elapsedSeconds % 3600) / 60);
+ //
+ //          return hours + ':' + minutes.toString().padStart(2, '0');
+ //        });
+   
+         const bpmPoints = time.map((t, i) => ({
+           x: (t - time[0]) / 60000, // temps relatif en minutes
+           y: bpmData[i]
+         }));
+
+         const avgPoints = avgTime.map((t, i) => ({
+           x: (t - time[0]) / 60000,
+           y: avgBpm[i]
+         }));
+   
+         // Préparer les datasets avec leurs propres labels
+         const datasets = [
+             {
+             label: profileName,
+             data: bpmPoints,
+             borderColor: '#36A2EB',
+             backgroundColor: 'rgba(54, 162, 235, 0.1)',
+             fill: true,
+             tension: 0.4,
+             pointRadius: 0,
+             pointHoverRadius: 5,
+             parsing: false // Indique à Chart.js qu'on fournit {x,y}
+             },
+             {
+             label: 'Moyenne public',
+             data: avgPoints,
+             borderColor: '#FF6384',
+             backgroundColor: 'rgba(255, 99, 132, 0.1)',
+             fill: false,
+             tension: 0.4,
+             pointRadius: 0,
+             pointHoverRadius: 5,
+             borderDash: [5, 5],
+             parsing: false
+             }
+         ];
+
+   
+         if (chart) {
+             chart.destroy();
+         }
+   
+         chart = new Chart(document.getElementById('bpmChart').getContext('2d'), {
+           type: 'line',
+           data: {
+             labels: labels,
+             datasets: datasets
+           },
+           options: {
+             responsive: true,
+             scales: {
+               y: {
+                 beginAtZero: false,
+                 min: 50,
+                 max: 180,
+                 title: {
+                   display: true,
+                   text: 'BPM'
+                 }
+               },
+               x: {
+                 type: 'linear',
+                 min: 0,
+                 max: Math.max(...bpmPoints.map(p => p.x), ...avgPoints.map(p => p.x)),
+                 title: {
+                   display: true,
+                   text: 'Temps écoulé (min)'
+                 }
+               }
+             }
+           }
+         });
+       }
   
-        //console.log('bpmData:', bpmData);
-        console.log('time:', time[0]);
-  
-        // Convertir les timestamps en temps relatif depuis le début (en heures:minutes)
-        const labels = time.map(timestamp => {
-          const elapsedSeconds = (timestamp - startTime)/1000;
-          const hours = Math.floor(elapsedSeconds / 3600);
-          const minutes = Math.floor((elapsedSeconds % 3600) / 60);
-        
-          return hours + ':' + minutes.toString().padStart(2, '0');
-        });
-
-        if (chart) {
-          chart.destroy();
-        }
-
-        chart = new Chart(document.getElementById('bpmChart').getContext('2d'), {
-          type: 'line',
-          data: {
-            labels: labels,
-            datasets: [{
-              label: profileName,
-              data: bpmData,
-              borderColor: '#36A2EB',
-              backgroundColor: 'rgba(54, 162, 235, 0.1)',
-              borderWidth: 2,
-              fill: true,
-              tension: 0.4,
-              pointRadius: 0,           // Masque les points
-              pointHoverRadius: 5       // Affiche les points seulement au survol
-            }]
-          },
-          options: {
-            responsive: true,
-            scales: {
-              y: {
-                beginAtZero: false,
-                min: 50,
-                max: 180,
-                title: {
-                  display: true,
-                  text: 'BPM'
-                }
-              },
-              x: {
-                title: {
-                  display: true,
-                  text: 'Temps écoulé (h:min)'
-                },
-                ticks: {
-                  maxTicksLimit: 10, // Limite le nombre de labels affichés pour éviter l'encombrement
-                  maxRotation: 45,   // Rotation des labels si nécessaire
-                  minRotation: 0
-                }
-              }
-            },
-            plugins: {
-              legend: {
-                display: false  // Légende masquée
-              }
-            }
-          }
-        });
-      }
-
       // Mise à jour automatique toutes les 5 secondes
       setInterval(() => {
   
