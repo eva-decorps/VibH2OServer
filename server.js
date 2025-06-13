@@ -5,25 +5,14 @@ const path = require('path');
 const app = express();
 const PORT = 3000;
 
-// Configuration du nombre de sièges (modifiable au lancement)
-const NUM_SEATS = process.env.NUM_SEATS ? parseInt(process.env.NUM_SEATS) : getNumSeatsFromArgs();
-
-function getNumSeatsFromArgs() {
-  const args = process.argv.slice(2);
-  const numSeatsArg = args.find(arg => arg.startsWith('--seats='));
-  if (numSeatsArg) {
-    return parseInt(numSeatsArg.split('=')[1]);
-  }
-  // Valeur par défaut si aucun argument fourni
-  return 2;
-}
-
 // Middleware
 app.use(express.static('public'));
 app.use(express.json());
 
 // Fonction pour charger les données BPM depuis le recording de vib-eMotion
 function loadBpmDataFromFiles() {
+
+  var maxSeat = 0;
 
   const bpmData = {};
   const filePath = path.join(__dirname, 'data', 'bpm_data.txt');
@@ -43,6 +32,11 @@ function loadBpmDataFromFiles() {
                   bpmData[id].data.push(parseInt(bpm));
                   bpmData[id].time.push(new Date(parseInt(timestamp)).toISOString());
               } else {
+                  
+                  if (id > maxSeat) {
+                      maxSeat = id;
+                  }
+                  
                   bpmData[id] = {
                     name: `Siège ${id}`,
                     data: [parseInt(bpm)],
@@ -55,19 +49,20 @@ function loadBpmDataFromFiles() {
   } catch (err) {
     console.error('Error reading or parsing the file:', err);
   }
+    
+  if (maxSeat == 0) {
+    console.error('Error no data in the file');
+  }
 
-  return bpmData;
-}
-
-// Génère des données BPM d'exemple
-function generateExampleBpmData() {
-  return Array.from({ length: 15 }, () => Math.floor(Math.random() * 60) + 60);
+  return [bpmData, maxSeat];
 }
 
 // Chargement des données BPM
-const bpmData = loadBpmDataFromFiles();
+const data = loadBpmDataFromFiles();
+const bpmData = data[0];
+const NUM_SEATS = data[1];
 
-// Routes API
+// Routes API connection
 app.get('/api/auth/:userId', (req, res) => {
   const { userId } = req.params;
   
@@ -75,8 +70,7 @@ app.get('/api/auth/:userId', (req, res) => {
     res.json({
       success: true,
       userId: userId,
-      profile: bpmData[userId].name,
-      qrCode: `QR-${userId.toUpperCase()}-${Date.now()}`
+      profile: bpmData[userId].name
     });
   } else {
     res.status(404).json({ success: false, message: 'Utilisateur non trouvé' });
@@ -87,17 +81,11 @@ app.get('/api/bpm/:userId', (req, res) => {
   const { userId } = req.params;
   
   if (bpmData[userId]) {
-    // Simulation - ajoute un peu de variation
-    //const variation = Math.floor(Math.random() * 6) - 3;
-    //const currentData = bpmData[userId].data.map(val => val + variation);
-      
-    const currentData = bpmData[userId].data;
-    
     res.json({
       success: true,
       userId: userId,
       profile: bpmData[userId].name,
-      bpmData: currentData,
+      bpmData: bpmData[userId].data,
       timestamp: new Date().toISOString()
     });
   } else {
@@ -114,7 +102,8 @@ app.get('/api/users', (req, res) => {
   res.json({ users, totalSeats: NUM_SEATS });
 });
 
-// NOUVELLE ROUTE: Authentification automatique via lien direct avec interface identique
+// TODO: faire un fichier html externe pour pas avoir de redite
+// Authentification automatique via lien direct avec interface identique
 app.get('/auth/:userId', (req, res) => {
   let { userId } = req.params;
 
@@ -349,13 +338,19 @@ app.get('/auth/:userId', (req, res) => {
 app.get('/user/:userId', (req, res) => {
   const { userId } = req.params;
 
-  if (!bpmData[userId]) {
+  const match = userId.match(/^user(\d+)$/);
+    
+  // TODO: à changer mais veut dire de changer les qr code
+  if (!match) {
+    res.status(404).send('<h2>❌ Utilisateur non trouvé</h2>');
+    return;
+  } else if (!bpmData[match[1]]) {
     res.status(404).send('<h2>❌ Utilisateur non trouvé</h2>');
     return;
   }
 
-  const userProfile = bpmData[userId].name;
-  const bpmValues = bpmData[userId].data;
+  const userProfile = bpmData[match[1]].name;
+  const bpmValues = bpmData[match[1]].data;
   const labels = bpmValues.map((_, i) => `T${i + 1}`);
   const bpmString = JSON.stringify(bpmValues);
   const labelString = JSON.stringify(labels);
@@ -610,5 +605,4 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`📱 Accès local: http://localhost:${PORT}`);
   console.log(`🌐 Accès réseau: http://[IP-DU-MAC]:${PORT}`);
   console.log(`📊 Configuration: ${NUM_SEATS} sièges (identifiants 1 à ${NUM_SEATS})`);
-  console.log(`📁 Fichiers de données: ./data/seat_1.json à ./data/seat_${NUM_SEATS}.json`);
 });
