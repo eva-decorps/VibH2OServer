@@ -12,7 +12,7 @@ app.use(express.json());
 // Fonction pour charger les données BPM depuis le recording de vib-eMotion
 function loadBpmDataFromFiles() {
 
-  var maxSeat = 0;
+  var maxID = 0;
 
   const bpmData = {};
   const filePath = path.join(__dirname, 'data', 'bpm_data.txt');
@@ -33,8 +33,9 @@ function loadBpmDataFromFiles() {
                   bpmData[id].time.push(parseInt(timestamp)); // Unix timestamp format
               } else {
                   
-                  if (id > maxSeat) {
-                      maxSeat = id;
+                  if (maxID < parseInt(id)) {
+                      console.log(`max seat ${id}`);
+                      maxID = id;
                   }
                   
                   bpmData[id] = {
@@ -50,14 +51,14 @@ function loadBpmDataFromFiles() {
     console.error('Error reading or parsing the file:', err);
   }
     
-  if (maxSeat == 0) {
+  if (maxID == 0) {
     console.error('Error no data in the file');
   }
 
   // Calcul de la moyenne des BPM de toutes les personnes
   const averageBpm = calculateAverageBpm(bpmData, 1000); // Intervalle de 1 seconde (1000ms)
-
-  return [bpmData, maxSeat, averageBpm];
+    
+  return [bpmData, maxID, averageBpm];
 }
 
 // Fonction pour calculer la moyenne des BPM de tous les utilisateurs
