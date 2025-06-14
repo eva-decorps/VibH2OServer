@@ -1,0 +1,8 @@
+# data folder
+data/*
+qr_output/*
+
+# node modules
+package-lock.json
+node_modules/*
+
