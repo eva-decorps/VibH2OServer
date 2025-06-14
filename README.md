@@ -26,6 +26,12 @@ Pour lancer le server, mettre le fichier dans un répertoire `data` dans le repo
 node server.js  
 ```
 
+Pour avoir accès au server en local aller sur http://localhost:3000 et pour voir directement un user donné n aller sur http://localhost:3000/user/usern
+
+Depuis une autre machine sur le même réseau aller sur http://ip-ordinateur:3000 et http://ip-ordinateur:3000/user/usern avec l'ip de l'ordinateur sur lequel le server tourne
+
+On peut aussi se connecter directement en scannant un qr code associé à un siège
+
 Pour générer les qr codes :
 ```shell
 # rendre le script exécutable
