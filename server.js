@@ -83,21 +83,21 @@ function loadBpmDataFromFiles() {
   // Compute average BPM every second (1000 ms)
   const averageBpm = calculateAverageBpm(bpmData, 1000);
     
-  return [bpmData, maxID, averageBpm];
+  return [maxID, averageBpm.users, averageBpm.global];
 }
 
-// Compute average BPM for a given interval
+// Compute average BPM for a given interval and apply the same temporal smoothing per user
 function calculateAverageBpm(bpmData, intervalMs = 1000) {
   const userIds = Object.keys(bpmData);
-  
+
   if (userIds.length === 0) {
-    return { data: [], time: [] };
+    return { global: { name: 'Moyenne globale', data: [], time: [] }, users: {} };
   }
 
   // Find time bounds
   let minTimestamp = Infinity;
   let maxTimestamp = -Infinity;
-  
+
   userIds.forEach(id => {
     const times = bpmData[id].time;
     if (times.length > 0) {
@@ -107,23 +107,30 @@ function calculateAverageBpm(bpmData, intervalMs = 1000) {
   });
 
   if (minTimestamp === Infinity) {
-    return { data: [], time: [] };
+    return { global: { name: 'Moyenne globale', data: [], time: [] }, users: {} };
   }
 
   const averageData = [];
   const averageTime = [];
+  const userSmoothedData = {};
+
+  userIds.forEach(id => {
+    userSmoothedData[id] = {
+      name: id,
+      data: [],
+      time: []
+    };
+  });
 
   // Loop over all time intervals
   for (let currentTime = minTimestamp; currentTime <= maxTimestamp; currentTime += intervalMs) {
     const intervalEnd = currentTime + intervalMs;
     const userAverages = [];
 
-    // For each user compute their avg on this interval
     userIds.forEach(id => {
       const userData = bpmData[id];
       const bpmValuesInInterval = [];
 
-      // Find all values within this interval
       for (let i = 0; i < userData.time.length; i++) {
         const timestamp = userData.time[i];
         if (timestamp >= currentTime && timestamp < intervalEnd) {
@@ -131,35 +138,47 @@ function calculateAverageBpm(bpmData, intervalMs = 1000) {
         }
       }
 
-      // If user has data in this interval compute avg
       if (bpmValuesInInterval.length > 0) {
         const userAverage = bpmValuesInInterval.reduce((sum, bpm) => sum + bpm, 0) / bpmValuesInInterval.length;
-        userAverages.push(userAverage);
+        const roundedAvg = Math.round(userAverage * 100) / 100;
+
+        userAverages.push(roundedAvg);
+
+        // Add smoothed value for this user
+        userSmoothedData[id].data.push(roundedAvg);
+        userSmoothedData[id].time.push(currentTime);
+      } else {
+        // Optional: if you want to fill with nulls to keep time alignment
+        // userSmoothedData[id].data.push(null);
+        // userSmoothedData[id].time.push(currentTime);
       }
     });
 
-    // If at least one user has data in this interval
     if (userAverages.length > 0) {
       const globalAverage = userAverages.reduce((sum, avg) => sum + avg, 0) / userAverages.length;
-      averageData.push(Math.round(globalAverage * 100) / 100); // Arrondi à 2 décimales
+      averageData.push(Math.round(globalAverage * 100) / 100);
       averageTime.push(currentTime);
     }
   }
 
   return {
-    name: 'Moyenne globale',
-    data: averageData,
-    time: averageTime
+    global: {
+      name: 'Moyenne globale',
+      data: averageData,
+      time: averageTime
+    },
+    users: userSmoothedData
   };
 }
+
 
 ////
 // BPM DATA LOADING AT STARTUP
 ////
 
 const data = loadBpmDataFromFiles();
-const bpmData = data[0];
-const NUM_SEATS = data[1];
+const NUM_SEATS = data[0];
+const bpmData = data[1];
 const avgBpm = data[2];
 
 ////
