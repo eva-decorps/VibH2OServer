@@ -24,13 +24,14 @@
 <body>
   <div class="container">
     <h1>🫀 Emotional Map</h1>
-    
-    <div class="info">
-      <strong>Configuration:</strong> {{numSeats}} Valid ids from 1 to {{numSeats}}
-    </div>
 
     <!-- Section d'authentification -->
     <div id="authSection" style="display:{{authSectionDisplay}};">
+      
+      <div class="info">
+        <strong>Configuration:</strong> {{numSeats}} Valid ids from 1 to {{numSeats}}
+      </div>
+
       <h3>Authentification</h3>
       <input type="text" id="userIdInput" placeholder="Id (1 to {{numSeats}})" />
       <button class="btn-primary" onclick="authenticateUser()">Connect</button>
@@ -83,13 +84,13 @@
   }
 
   function authenticateUser() {
-    
+
     let userId = document.getElementById('userIdInput').value.trim();
     const statusDiv = document.getElementById('authStatus');
 
     if (!validUsers.includes(userId)) {
       console.log("chelou");
-      statusDiv.innerHTML = '<div class="status error">❌ Identifiant invalide. Utilisez un nombre de 1 à {{numSeats}}.</div>';
+      statusDiv.innerHTML = '<div class="status error">❌ Invalid id. Valid ids within 1 and {{numSeats}}.</div>';
       return;
     }
 
@@ -169,40 +170,75 @@
     }));
 
     const avgPoints = avgTime.map((t, i) => ({
-      x: (t - time[0]) / 60000,
+      x: (t - time[0]) / 60000, // temps relatif en minutes
       y: avgBpm[i]
     }));
 
+    const minBpm = Math.min(Math.min(...bpmData), Math.min(...avgBpm));
+    const maxBpm = Math.max(Math.max(...bpmData), Math.max(...avgBpm));
+
+    const xMinBound = Math.floor( (minBpm - (maxBpm-minBpm)*0.2) / 10 ) * 10;  
+    const xMaxBound = Math.ceil( (maxBpm + (maxBpm-minBpm)*0.2) / 10 ) * 10; 
+
     // Préparer les datasets avec leurs propres labels
     const datasets = [
-        {
+      {
         label: profileName,
         data: bpmPoints,
         borderColor: '#36A2EB',
-        backgroundColor: 'rgba(54, 162, 235, 0.1)',
-        fill: true,
+        borderWidth: 2,
+        radius: 0,
         tension: 0.4,
-        pointRadius: 0,
         pointHoverRadius: 5,
         parsing: false // Indique à Chart.js qu'on fournit {x,y}
-        },
-        {
+      },
+      {
         label: 'Moyenne public',
         data: avgPoints,
         borderColor: '#FF6384',
-        backgroundColor: 'rgba(255, 99, 132, 0.1)',
-        fill: false,
+        borderWidth: 2,
+        radius: 0,
         tension: 0.4,
-        pointRadius: 0,
         pointHoverRadius: 5,
-        borderDash: [5, 5],
         parsing: false
-        }
+      }
     ];
 
     if (chart) {
         chart.destroy();
     }
+
+    const totalDuration = 10000;
+    const delayBetweenPoints = totalDuration / bpmData.length;
+    const previousY = (ctx) => ctx.index === 0 ? ctx.chart.scales.y.getPixelForValue(100) : ctx.chart.getDatasetMeta(ctx.datasetIndex).data[ctx.index - 1].getProps(['y'], true).y;
+    const animation = {
+      x: {
+        type: 'number',
+        easing: 'linear',
+        duration: delayBetweenPoints,
+        from: NaN, // the point is initially skipped
+        delay(ctx) {
+          if (ctx.type !== 'data' || ctx.xStarted) {
+            return 0;
+          }
+          ctx.xStarted = true;
+          return ctx.index * delayBetweenPoints;
+        }
+      },
+      y: {
+        type: 'number',
+        easing: 'linear',
+        duration: delayBetweenPoints,
+        from: previousY,
+        delay(ctx) {
+          if (ctx.type !== 'data' || ctx.yStarted) {
+            return 0;
+          }
+          ctx.yStarted = true;
+          return ctx.index * delayBetweenPoints;
+        }
+      }
+    };
 
     chart = new Chart(document.getElementById('bpmChart').getContext('2d'), {
       type: 'line',
@@ -211,12 +247,13 @@
         datasets: datasets
       },
       options: {
+        animation,
         responsive: true,
         scales: {
           y: {
             beginAtZero: false,
-            min: 50,
-            max: 180,
+            min: xMinBound,
+            max: xMaxBound,
             title: {
               display: true,
               text: 'BPM'
