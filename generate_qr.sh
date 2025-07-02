@@ -34,5 +34,11 @@ for ((i = 1; i <= N; i++)); do
 
 done
 
+# Générer le QR code vers l'authentification manuelle
+FILENAME="$OUTPUT_DIR/auth_qr.png"
+URL="http://$IP:3000"
+echo "→ Génération de $FILENAME pour $URL"
+qrencode -s 10 -o "$FILENAME" "$URL"
+
 echo "✅ QR codes générés dans le dossier '$OUTPUT_DIR'"
 
