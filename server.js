@@ -83,7 +83,7 @@ function loadBpmDataFromFiles() {
   }
 
   // Compute average BPM every second (1000 ms)
-  const averageBpm = calculateAverageBpm(bpmData, 1000);
+  const averageBpm = calculateAverageBpm(bpmData, 5000);
     
   return [maxID, averageBpm.users, averageBpm.global];
 }
