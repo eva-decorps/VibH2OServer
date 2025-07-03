@@ -193,21 +193,6 @@ const avgBpm = data[2];
 // ROUTES 
 ////
 
-// Routes API connection
-app.get('/api/auth/:userId', (req, res) => {
-  const { userId } = req.params;
-  
-  if (bpmData[userId]) {
-    res.json({
-      success: true,
-      userId: userId,
-      profile: bpmData[userId].name
-    });
-  } else {
-    res.status(404).json({ success: false, message: 'User not found' });
-  }
-});
-
 // Get bpm data
 app.get('/api/bpm/:userId', (req, res) => {
   const { userId } = req.params;
@@ -227,7 +212,22 @@ app.get('/api/bpm/:userId', (req, res) => {
   }
 });
 
-// Authentification automatique via lien direct
+// Authentication route
+app.get('/api/auth/:userId', (req, res) => {
+  const { userId } = req.params;
+  
+  if (bpmData[userId]) {
+    res.json({
+      success: true,
+      userId: userId,
+      profile: bpmData[userId].name
+    });
+  } else {
+    res.status(404).json({ success: false, message: 'User not found' });
+  }
+});
+
+// Authentification route for auth with link 
 app.get('/auth/:userId', (req, res) => {
   let { userId } = req.params;
 
@@ -255,26 +255,8 @@ app.get('/auth/:userId', (req, res) => {
   res.send(dashboardHtml);
 });
 
-// Routes d'accès direct
-app.get('/user/:userId', (req, res) => {
-  const { userId } = req.params;
-  const match = userId.match(/^user(\d+)$/);
-    
-  if (!match) {
-    res.status(404).send('<h2>❌ User not found</h2>');
-    return;
-  } else if (!bpmData[match[1]]) {
-    res.status(404).send('<h2>❌ User not found</h2>');
-    return;
-  }
-
-  // Redirection
-  res.redirect(`/auth/${match[1]}`);
-});
-
-// Route principale
+// Main route
 app.get('/', (req, res) => {
-  
   const validUsersArray = Object.keys(bpmData);
   const validUsersString = validUsersArray.map(u => `'${u}'`).join(', ');
     
@@ -290,7 +272,7 @@ app.get('/', (req, res) => {
   res.send(dashboardHtml);
 });
 
-// Démarrage du serveur
+// Server startup
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Serveur BPM démarré sur http://0.0.0.0:${PORT}`);
   console.log(`📱 Accès local: http://localhost:${PORT}`);
