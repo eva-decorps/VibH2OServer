@@ -117,27 +117,19 @@
     document.getElementById('authSection').style.display = 'none';
     document.getElementById('mainSection').style.display = 'block';
   }
+    function logout() {
+      // Reset values
+      currentUser = null;
+      if(chart) {
+        chart.destroy();
+        chart = null;
+      }
+      document.getElementById('authStatus').innerHTML = '';
+      document.getElementById('userIdInput').value = '';
 
-  function logout() {
-    currentUser = null;
-    connectionCount = 0;
-    if(chart) {
-      chart.destroy();
-      chart = null;
-    }
-    document.getElementById('authStatus').innerHTML = '';
-    document.getElementById('userIdInput').value = '';
-    document.getElementById('chartTitle').textContent = 'Sélectionnez un profil';
-    
-    if (autoAuth) {
-      // Si on était en mode auto-auth, rediriger vers la page d'accueil
+      // Redirect toward authentication page
       window.location.href = '/';
-    } else {
-      // Sinon, juste masquer la section principale
-      document.getElementById('mainSection').style.display = 'none';
-      document.getElementById('authSection').style.display = 'block';
     }
-  }
 
   function loadBpmData(userId) {
     fetch(`/api/bpm/${userId}`)
