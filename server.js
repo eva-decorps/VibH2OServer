@@ -13,13 +13,14 @@ app.use(express.json());
 // TEMPLATE FUNCTIONS
 ////
 
-// Fonction pour charger et traiter les templates HTML
+// Load and handle html templates
 function loadTemplate(templateName, variables = {}) {
   try {
+    // Fetch template
     const templatePath = path.join(__dirname, 'templates', `${templateName}.html`);
     let template = fs.readFileSync(templatePath, 'utf-8');
     
-    // Remplacer les variables dans le template
+    // Replace var in templates
     Object.keys(variables).forEach(key => {
       const regex = new RegExp(`{{${key}}}`, 'g');
       template = template.replace(regex, variables[key]);
@@ -31,6 +32,7 @@ function loadTemplate(templateName, variables = {}) {
     return '<h1>Template Error</h1>';
   }
 }
+
 
 ////
 // LOADING FUNCTIONS
@@ -106,6 +108,7 @@ function calculateAverageBpm(bpmData, intervalMs = 1000) {
     }
   });
 
+  // Invalid data
   if (minTimestamp === Infinity) {
     return { global: { name: 'Moyenne globale', data: [], time: [] }, users: {} };
   }
@@ -125,12 +128,13 @@ function calculateAverageBpm(bpmData, intervalMs = 1000) {
   // Loop over all time intervals
   for (let currentTime = minTimestamp; currentTime <= maxTimestamp; currentTime += intervalMs) {
     const intervalEnd = currentTime + intervalMs;
-    const userAverages = [];
+    const userAverages = []; // All users' avg for this interval
 
     userIds.forEach(id => {
       const userData = bpmData[id];
-      const bpmValuesInInterval = [];
+      const bpmValuesInInterval = []; // All bpm values for user in this interval
 
+      // Loop through all values, not optimal
       for (let i = 0; i < userData.time.length; i++) {
         const timestamp = userData.time[i];
         if (timestamp >= currentTime && timestamp < intervalEnd) {
@@ -138,22 +142,25 @@ function calculateAverageBpm(bpmData, intervalMs = 1000) {
         }
       }
 
+      // Compute user avg in this interval
       if (bpmValuesInInterval.length > 0) {
         const userAverage = bpmValuesInInterval.reduce((sum, bpm) => sum + bpm, 0) / bpmValuesInInterval.length;
         const roundedAvg = Math.round(userAverage * 100) / 100;
 
+        // Add user's value for this interval
         userAverages.push(roundedAvg);
 
         // Add smoothed value for this user
         userSmoothedData[id].data.push(roundedAvg);
         userSmoothedData[id].time.push(currentTime);
       } else {
-        // Optional: if you want to fill with nulls to keep time alignment
-        // userSmoothedData[id].data.push(null);
-        // userSmoothedData[id].time.push(currentTime);
+        // Add null data to keep time alignment
+        userSmoothedData[id].data.push(null);
+        userSmoothedData[id].time.push(currentTime);
       }
     });
 
+    // Compute all users avg for this interval
     if (userAverages.length > 0) {
       const globalAverage = userAverages.reduce((sum, avg) => sum + avg, 0) / userAverages.length;
       averageData.push(Math.round(globalAverage * 100) / 100);
@@ -180,6 +187,7 @@ const data = loadBpmDataFromFiles();
 const NUM_SEATS = data[0];
 const bpmData = data[1];
 const avgBpm = data[2];
+
 
 ////
 // ROUTES 
