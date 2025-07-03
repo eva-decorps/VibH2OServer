@@ -20,103 +20,99 @@
     </style>
 </head>
 
-
+ 
 <body>
   <div class="container">
     <h1>🫀 Emotional Map</h1>
 
     <!-- Section d'authentification -->
     <div id="authSection" style="display:{{authSectionDisplay}};">
-      
+
       <div class="info">
         <strong>Configuration:</strong> {{numSeats}} Valid ids from 1 to {{numSeats}}
       </div>
 
       <h3>Authentification</h3>
       <input type="text" id="userIdInput" placeholder="Id (1 to {{numSeats}})" />
-      <button class="btn-primary" onclick="authenticateUser()">Connect</button>
+      <button class="btn-primary" onclick="authenticateUser()">Login</button>
       <div id="authStatus"></div>
-    </div>
+    </div> 
 
     <!-- Section principale -->
     <div id="mainSection" style="display:{{mainSectionDisplay}};">
       <div class="chart-container">
-        <h3 id="chartTitle">Sélectionnez un profil</h3>
-        <canvas id="bpmChart" width="400" height="200"></canvas>
+        <canvas id="bpmChart"></canvas>
       </div>
 
-      <button class="btn-success" onclick="logout()">Déconnexion</button>
+      <button class="btn-success" onclick="logout()">Logout</button>
     </div>
   </div>
 
-<script>
-  let chart = null;
-  let currentUser = '{{autoAuth}}' === 'true' ? '{{userId}}' : null;
-  let connectionCount = '{{autoAuth}}' === 'true' ? 1 : 0;
+  <script>
+    let chart = null;
+    let currentUser = '{{autoAuth}}' === 'true' ? '{{userId}}' : null;
 
-  const validUsers = [{{validUsersString}}];
-  const autoAuth = '{{autoAuth}}' === 'true';
-  const presetUserId = '{{userId}}';
+    const validUsers = [{{validUsersString}}];
+    const autoAuth = '{{autoAuth}}' === 'true';
+    const presetUserId = '{{userId}}';
 
-  // Authentification automatique au chargement si nécessaire
-  window.onload = function() {
-    if (autoAuth && presetUserId) {
-      authenticateUserAuto(presetUserId);
-    }
-  };
+    // Automatic authentification when authentication via link
+    window.onload = function() {
+      if (autoAuth && presetUserId) {
+        authenticateUserAuto(presetUserId);
+      }
+    };
 
-  function authenticateUserAuto(userId) {
-    fetch(`/api/auth/${userId}`)
-      .then(response => response.json())
-      .then(data => {
-        if (data.success) {
-          currentUser = userId;
-          connectionCount++;
-          showMainSection();
-          loadBpmData(userId);
-        } else {
-          console.error('Échec authentification automatique');
-        }
-      })
-      .catch(error => {
-        console.error('Erreur authentification automatique:', error);
-      });
-  }
-
-  function authenticateUser() {
-
-    let userId = document.getElementById('userIdInput').value.trim();
-    const statusDiv = document.getElementById('authStatus');
-
-    if (!validUsers.includes(userId)) {
-      console.log("chelou");
-      statusDiv.innerHTML = '<div class="status error">❌ Invalid id. Valid ids within 1 and {{numSeats}}.</div>';
-      return;
+    function authenticateUserAuto(userId) {
+      fetch(`/api/auth/${userId}`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            currentUser = userId;
+            showMainSection();
+            loadBpmData(userId);
+          } else {
+            console.error('Échec authentification automatique');
+          }
+        })
+        .catch(error => {
+          console.error('Erreur authentification automatique:', error);
+        });
     }
 
-    fetch(`/api/auth/${userId}`)
-      .then(response => response.json())
-      .then(data => {
-        if (data.success) {
-          statusDiv.innerHTML = `<div class="status success">✅ Authentifié: ${data.profile}</div>`;
-          currentUser = userId;
-          connectionCount++;
-          showMainSection();
-          loadBpmData(userId);
-        } else {
-          statusDiv.innerHTML = '<div class="status error">❌ Échec authentification</div>';
-        }
-      })
-      .catch(error => {
-        console.error('Erreur:', error);
-        statusDiv.innerHTML = '<div class="status error">❌ Erreur réseau</div>';
-      });
-  }
+    function authenticateUser() {
 
-  function showMainSection() {
-    document.getElementById('authSection').style.display = 'none';
-    document.getElementById('mainSection').style.display = 'block';
-  }
+      let userId = document.getElementById('userIdInput').value.trim();
+      const statusDiv = document.getElementById('authStatus');
+
+      if (!validUsers.includes(userId)) {
+        statusDiv.innerHTML = '<div class="status error">❌ Invalid id. Valid ids within 1 and {{numSeats}}.</div>';
+        return;
+      }
+
+      fetch(`/api/auth/${userId}`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            statusDiv.innerHTML = `<div class="status success">✅ Authentifié: ${data.profile}</div>`;
+            currentUser = userId;
+            showMainSection();
+            loadBpmData(userId);
+          } else {
+            statusDiv.innerHTML = '<div class="status error">❌ Échec authentification</div>';
+          }
+        })
+        .catch(error => {
+          console.error('Erreur:', error);
+          statusDiv.innerHTML = '<div class="status error">❌ Erreur réseau</div>';
+        });
+    }
+
+    function showMainSection() {
+      document.getElementById('authSection').style.display = 'none';
+      document.getElementById('mainSection').style.display = 'block';
+    }
+
     function logout() {
       // Reset values
       currentUser = null;
@@ -131,19 +127,18 @@
       window.location.href = '/';
     }
 
-  function loadBpmData(userId) {
-    fetch(`/api/bpm/${userId}`)
-      .then(response => response.json())
-      .then(data => {
-        if (data.success) {
-          document.getElementById('chartTitle').textContent = `📊 ${data.profile} - BPM au cours du spectacle`;
-          updateChart(data.bpmData, data.time, data.profile, data.avg, data.avgTime);
-        }
-      })
-      .catch(error => console.error('Erreur BPM:', error));
-  }
+    function loadBpmData(userId) {
+      fetch(`/api/bpm/${userId}`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            updateChart(data.bpmData, data.time, data.profile, data.avg, data.avgTime);
+          }
+        })
+        .catch(error => console.error('Erreur BPM:', error));
+    }
 
-  function updateChart(bpmData, time, profileName, avgBpm, avgTime) {
+    function updateChart(bpmData, time, profileName, avgBpm, avgTime) {
       // Prendre le premier timestamp comme origine
       const startTime = time[0];
 
@@ -259,7 +254,8 @@
         }
       });
     }
-  
-</script>
+
+  </script>
+
 </body>
 </html>
