@@ -5,6 +5,8 @@
   
   <title>Emotional Map</title>  
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@1.4.0/dist/chartjs-plugin-annotation.min.js"></script>
+
   
   <style>
 
@@ -213,7 +215,26 @@
         .catch(error => console.error('Erreur BPM:', error));
     }
 
-    function updateChart(bpmData, time, profileName, avgBpm, avgTime) {
+    function updateChart(bpmData, time, profileName, avgBpm, avgTime/*, landmarks = []*/) {
+
+      // Add landmarks here
+      const landmarks = [
+        {
+          timestamp: 6.5  *60000 + time[0],//time[80],
+          label: 'Relax',
+          color: '#4BC0C0'
+        },
+        {
+          timestamp: time[215],
+          label: 'Jump Scare',
+          color: '#FF6384'
+        },
+        {
+          timestamp: time[265],
+          label: 'Climax',
+          color: '#FF6384'
+        }
+      ];
 
       // Convert timestamps in relative time with format hour:min
       const startTime = time[0];
@@ -254,22 +275,50 @@
           pointHoverRadius: 5
         }
       ];
-      
-      // Make sure no chart is already here
-      if (chart) {
-          chart.destroy();
-      }
+          
+      // Create annotations for landmarks
+      const annotations = {};
+      landmarks.forEach((landmark, index) => {
+        // Find the closest time index for this landmark
+        const landmarkTime = landmark.timestamp;
+        const closestIndex = time.findIndex(t => t >= landmarkTime);
+        
+        if (closestIndex >= 0) {
+          // Vertical line
+          annotations[`landmark${index}`] = {
+            type: 'line',
+            xMin: closestIndex,
+            xMax: closestIndex,
+            borderColor: landmark.color || '#FF6384',
+            borderWidth: 2,
+            borderDash: [5, 5],
+            label: {
+              content: landmark.label || 'Event',
+              enabled: true,
+              position: 'top',
+              yAdjust: -160, // Need to find a trick to make it relative to graph height
+              backgroundColor: landmark.color || '#FF6384',
+              color: '#fff',
+              font: {
+                size: 12
+              },
+              padding: 4,
+              rotation: 0
+            }
+          };
+        }
+      });
 
       // Define animation
       const totalDuration = 5000;
       const delayBetweenPoints = totalDuration / bpmData.length;
-      const previousY = (ctx) => ctx.index === 0 ? ctx.chart.scales.y.getPixelForValue(100) : ctx.chart.getDatasetMeta(ctx.datasetIndex). data[ctx.index - 1].getProps(['y'], true).y;
+      const previousY = (ctx) => ctx.index === 0 ? ctx.chart.scales.y.getPixelForValue(100) : ctx.chart.getDatasetMeta(ctx.datasetIndex).data[ctx.index - 1].getProps(['y'], true).y;
       const animation = {
         x: {
           type: 'number',
           easing: 'linear',
           duration: delayBetweenPoints,
-          from: NaN, // the point is initially skipped
+          from: NaN,
           delay(ctx) {
             if (ctx.type !== 'data' || ctx.xStarted) {
               return 0;
@@ -293,7 +342,11 @@
         }
       };
 
-      // Create chart
+      // Make sure no chart is already here
+      if (chart) {
+        chart.destroy();
+      }
+      
       chart = new Chart(document.getElementById('bpmChart').getContext('2d'), {
         type: 'line',
         data: {
@@ -301,7 +354,7 @@
           datasets: datasets
         },
         options: {
-          animation,
+          //animation, // Doesn't work with annotations...
           responsive: true,
           plugins: {
             legend: {
@@ -312,6 +365,9 @@
                 },
                 padding: 20
               }
+            },
+            annotation: {
+              annotations: annotations
             }
           },
           scales: {
@@ -347,8 +403,8 @@
                 }
               },
               ticks: {
-                maxTicksLimit: 10, // Label nb limit
-                maxRotation: 45,   // Rotation des labels si nécessaire
+                maxTicksLimit: 10,
+                maxRotation: 45,
                 minRotation: 0,
                 color: '#737fa9',
                 font: {
@@ -363,7 +419,6 @@
         }
       });
     }
-
   </script>
 
 </body>
