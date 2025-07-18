@@ -209,32 +209,13 @@
         .then(response => response.json())
         .then(data => {
           if (data.success) {
-            updateChart(data.bpmData, data.time, data.profile, data.avg, data.avgTime);
+            updateChart(data.bpmData, data.time, data.profile, data.avg, data.avgTime, data.landmarks);
           }
         })
         .catch(error => console.error('Erreur BPM:', error));
     }
 
-    function updateChart(bpmData, time, profileName, avgBpm, avgTime/*, landmarks = []*/) {
-
-      // Add landmarks here
-      const landmarks = [
-        {
-          timestamp: 6.5  *60000 + time[0],//time[80],
-          label: 'Relax',
-          color: '#4BC0C0'
-        },
-        {
-          timestamp: time[215],
-          label: 'Jump Scare',
-          color: '#FF6384'
-        },
-        {
-          timestamp: time[265],
-          label: 'Climax',
-          color: '#FF6384'
-        }
-      ];
+    function updateChart(bpmData, time, profileName, avgBpm, avgTime, landmarks) {
 
       // Convert timestamps in relative time with format hour:min
       const startTime = time[0];

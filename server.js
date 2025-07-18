@@ -1,4 +1,5 @@
 // Simple Node.js server to display BPM chart
+const { timeStamp } = require('console');
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
@@ -178,6 +179,35 @@ function calculateAverageBpm(bpmData, intervalMs = 1000) {
   };
 }
 
+function loadLandmarks(t0) {
+  const landmarks = [];
+  const filePath = path.join(__dirname, 'data', 'landmarks.txt');
+
+  try {
+    const fileContent = fs.readFileSync(filePath, 'utf-8');
+    const lines = fileContent.split('\n');
+    
+    for (const line of lines) {
+      // Match pattern like: "30, jumpscare, red;"
+      const match = line.match(/^(\d+),\s*([^,]+),\s*(#[0-9A-Fa-f]{6});$/);
+      
+      if (match) {
+        const [, time, label, color] = match;
+
+        landmarks.push({
+          timestamp: parseInt(time)*60000 + t0, 
+          label: label, 
+          color: color
+        });
+      }
+    }
+  } catch (err) {
+    console.error('Error reading or parsing the file:', err);
+  }
+  
+  return landmarks;
+}
+
 
 ////
 // BPM DATA LOADING AT STARTUP
@@ -187,6 +217,7 @@ const data = loadBpmDataFromFiles();
 const NUM_SEATS = data[0];
 const bpmData = data[1];
 const avgBpm = data[2];
+const landmarks = loadLandmarks(avgBpm.time[0]);
 
 
 ////
@@ -205,7 +236,8 @@ app.get('/api/bpm/:userId', (req, res) => {
       bpmData: bpmData[userId].data,
       time: bpmData[userId].time,
       avg: avgBpm.data,
-      avgTime: avgBpm.time
+      avgTime: avgBpm.time,
+      landmarks: landmarks
     });
   } else {
     res.status(404).json({ success: false, message: 'Data not found' });

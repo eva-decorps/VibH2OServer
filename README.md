@@ -10,6 +10,7 @@ brew install node
 cd VibH2OServer
 npm init -y
 npm install express
+npm install chartjs-plugin-annotation
 ```
 
 # Utilisation
@@ -24,7 +25,15 @@ input_file = "tonfichier"
 python remove_lines.py
 ```
 
-Pour lancer le server, mettre le fichier dans un répertoire `data` dans le repo et si besoin le renommer `bpm_data.txt`, puis lancer le server avec la commande :
+Pour lancer le server, mettre le fichier dans un répertoire `data` dans le repo et si besoin le renommer `bpm_data.txt`. \
+Il est aussi possible de rajouter des drapeaux pour noter des évènements spécifiques dans le spectacle. Pour cela créer un document `landmarks.txt` avec sur chaque ligne le nombre de minutes écoulées depuis le début du spectacle, la légende qui sera utilisée et la couleur du drapeau en hexadécimal comme suit :
+
+```
+6, Relax, #4BC0C0;
+18, Jump Scare, #FF6384;
+```
+
+Puis lancer le server avec la commande :
 
 ```shell
 node server.js  
