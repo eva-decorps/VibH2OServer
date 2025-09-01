@@ -28,11 +28,17 @@ mkdir -p "$OUTPUT_DIR"
 # Générer les QR codes
 for ((i = 1; i <= N; i++)); do
   FILENAME="$OUTPUT_DIR/user${i}_qr.png"
-  URL="http://$IP:3000/user/user${i}"
+  URL="http://$IP:3000/auth/${i}"
   echo "→ Génération de $FILENAME pour $URL"
   qrencode -s 10 -o "$FILENAME" "$URL"
 
 done
+
+# Générer le QR code vers l'authentification manuelle
+FILENAME="$OUTPUT_DIR/auth_qr.png"
+URL="http://$IP:3000"
+echo "→ Génération de $FILENAME pour $URL"
+qrencode -s 10 -o "$FILENAME" "$URL"
 
 echo "✅ QR codes générés dans le dossier '$OUTPUT_DIR'"
 
