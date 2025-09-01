@@ -3,6 +3,7 @@ const { timeStamp } = require('console');
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
+const osc = require('osc');
 const app = express();
 const PORT = 3000;
 
@@ -218,6 +219,74 @@ const NUM_SEATS = data[0];
 const bpmData = data[1];
 const avgBpm = data[2];
 const landmarks = loadLandmarks(avgBpm.time[0]);
+
+
+////
+// OSC
+////
+
+// id, stage (-1 =  not recording, 0 = baseline, 1 = 1st room, 2 = 2nd room ...)
+const activeID = {1: 0, 2: 1, 5: 4, 7: -1};
+
+// Create an OSC UDP Port on localhost, port 8000
+const udpPort = new osc.UDPPort({
+  localAddress: "127.0.0.1", // should be an arg given at app startup
+  localPort: 8000,
+  metadata: true
+});
+
+// Listen for OSC messages and store data
+udpPort.on("message", (oscMsg, timeTag, info) => {
+  //console.log("Received OSC message:", oscMsg);
+  
+  // Parse address to feetch id
+  const match = oscMsg.address.match(/^\/oh1\/(\d+)\/bpm$/);
+  if (match) {
+    const id = parseInt(match[1], 10);
+
+    // Check if it is currently in use
+    if (id in activeID) {
+
+      // Check at what stage it is
+      const idStatus = activeID[id];
+      const bpm = oscMsg.args[0].value;
+      const timestamp = Date.now(); // timestamp in ms
+
+      // Build folder path
+      const userFolder = path.join(__dirname, "user", String(id));
+      // Ensure folder exists
+      if (!fs.existsSync(userFolder)) {
+        fs.mkdirSync(userFolder, { recursive: true });
+      }
+      
+      // Filepath depends on stage
+      let filePath;
+      if (idStatus === 0) {
+        filePath = path.join(userFolder, "baseline.txt");
+      } else if (idStatus > 0 && idStatus < 5) {
+        filePath = path.join(userFolder, `stage_${idStatus}.txt`);
+      }
+
+      if (filePath) {
+        const line = `${bpm}, ${timestamp};\n`;
+
+        // Append or create file
+        fs.appendFile(filePath, line, (err) => {
+          if (err) {
+            console.error("Error writing to file:", err);
+          }
+        });
+
+      }
+
+    }
+    
+  }
+
+});
+
+// Open the connection
+udpPort.open();
 
 
 ////
