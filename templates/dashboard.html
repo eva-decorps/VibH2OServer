@@ -2,14 +2,11 @@
 <html>
 
 <head>
-  
-  <title>Emotional Map</title>  
+  <title>Emotional Map - Dashboard</title>  
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@1.4.0/dist/chartjs-plugin-annotation.min.js"></script>
 
-  
   <style>
-
     html, body {
       margin: 0;
       padding-left: 20px;
@@ -30,20 +27,6 @@
     h1 {
       margin: 0;
       padding: 20px;
-    }
-
-    #mainSection {
-      display: flex;
-      flex-direction: column;
-      flex-grow: 1;
-      /*overflow: hidden; /* pour éviter les scrolls inutiles */
-    }
-
-    .auth-section, .info, .status {
-      margin-bottom: 20px;
-      background: #e8f4fd;
-      border-radius: 8px;
-      padding: 15px;
     }
 
     .chart-container {
@@ -75,51 +58,29 @@
       padding: 20px;
     }
 
+    .btn-success { 
+      background: #5b232f; 
+      color: white; 
+      transition: background-color 0.3s;
+    }
 
-    .btn-primary { background: #3e7552; color: white; }
-    .btn-success { background: #5b232f; color: white; }
-    .success { background: #d4edda; color: #155724; }
-    .error { background: #f8d7da; color: #721c24; }
-    .info { background: #d1ecf1; color: #0c5460; }
-
+    .btn-success:hover {
+      background: #441a23;
+    }
   </style>
-
-
 </head>
 
- 
 <body>
   <div class="container">
-    
     <div class="header-bar">
       <h1>🫀 Emotional Map</h1>
-      
-      <div id="logoutButton" style="display: none;">
+      <div>
         <button class="btn-success" onclick="logout()">Logout</button>
       </div>
     </div>
 
-    <!-- Section d'authentification -->
-    <div id="authSection" style="display:{{authSectionDisplay}};">
-
-      <h3>Authentification</h3>
-      <div class="info">
-        <strong>Configuration:</strong> {{numSeats}} Valid ids from 1 to {{numSeats}}
-      </div>
-
-      <input type="text" id="userIdInput" placeholder="Id (1 to {{numSeats}})" />
-      <button class="btn-primary" onclick="authenticateUser()">Login</button>
-      <div id="authStatus"></div>
-
-    </div> 
-
-    <!-- Section principale -->
-    <div id="mainSection" style="display:{{mainSectionDisplay}};">
-
-      <div class="chart-container">
-        <canvas id="bpmChart"></canvas>
-      </div>
-
+    <div class="chart-container">
+      <canvas id="bpmChart"></canvas>
     </div>
   </div>
 
@@ -127,69 +88,15 @@
     let chart = null;
     let currentUser = '{{autoAuth}}' === 'true' ? '{{userId}}' : null;
 
-    const validUsers = [{{validUsersString}}];
-    const autoAuth = '{{autoAuth}}' === 'true';
-    const presetUserId = '{{userId}}';
-
     // Automatic authentification when authentication via link
     window.onload = function() {
-      if (autoAuth && presetUserId) {
-        authenticateUserAuto(presetUserId);
+      if (currentUser) {
+        loadBpmData(currentUser);
+      } else {
+        // Redirect to authentication if no user
+        window.location.href = '/';
       }
     };
-
-    function authenticateUserAuto(userId) {
-      fetch(`/api/auth/${userId}`)
-        .then(response => response.json())
-        .then(data => {
-          if (data.success) {
-            currentUser = userId;
-            showMainSection();
-            loadBpmData(userId);
-          } else {
-            console.error('Échec authentification automatique');
-          }
-        })
-        .catch(error => {
-          console.error('Erreur authentification automatique:', error);
-        });
-    }
-
-    function authenticateUser() {
-
-      let userId = document.getElementById('userIdInput').value.trim();
-      const statusDiv = document.getElementById('authStatus');
-
-      if (!validUsers.includes(userId)) {
-        statusDiv.innerHTML = '<div class="status error">❌ Invalid id. Valid ids within 1 and {{numSeats}}.</div>';
-        return;
-      }
-
-      fetch(`/api/auth/${userId}`)
-        .then(response => response.json())
-        .then(data => {
-          if (data.success) {
-            statusDiv.innerHTML = `<div class="status success">✅ Authentifié: ${data.profile}</div>`;
-            currentUser = userId;
-            // Redirect to room selection instead of showing main section
-            setTimeout(() => {
-              window.location.href = `/room-selection/${userId}`;
-            }, 1000);
-          } else {
-            statusDiv.innerHTML = '<div class="status error">❌ Échec authentification</div>';
-          }
-        })
-        .catch(error => {
-          console.error('Erreur:', error);
-          statusDiv.innerHTML = '<div class="status error">❌ Erreur réseau</div>';
-        });
-    }
-
-    function showMainSection() {
-      document.getElementById('authSection').style.display = 'none';
-      document.getElementById('mainSection').style.display = 'block';
-      document.getElementById('logoutButton').style.display = 'block';
-    }
 
     function logout() {
       // Reset values
@@ -198,9 +105,6 @@
         chart.destroy();
         chart = null;
       }
-      document.getElementById('authStatus').innerHTML = '';
-      document.getElementById('userIdInput').value = '';
-      document.getElementById('logoutButton').style.display = 'none';
 
       // Redirect toward authentication page
       window.location.href = '/';
@@ -218,7 +122,6 @@
     }
 
     function updateChart(bpmData, time, profileName, avgBpm, avgTime, landmarks) {
-
       // Convert timestamps in relative time with format hour:min
       const startTime = time[0];
       const labels = time.map(timestamp => {

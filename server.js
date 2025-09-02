@@ -376,7 +376,7 @@ app.get('/room/:roomId/:userId', (req, res) => {
   res.send(dashboardHtml);
 });
 
-// Authentification route for auth with link 
+// Authentication route for auth with link 
 app.get('/auth/:userId', (req, res) => {
   let { userId } = req.params;
 
@@ -389,36 +389,25 @@ app.get('/auth/:userId', (req, res) => {
     return;
   }
 
-  const validUsersArray = Object.keys(bpmData);
-  const validUsersString = validUsersArray.map(u => `'${u}'`).join(', ');
-
   const dashboardHtml = loadTemplate('dashboard', {
-    numSeats: NUM_SEATS,
-    validUsersString: validUsersString,
     userId: userId,
-    autoAuth: 'true',
-    authSectionDisplay: 'none',
-    mainSectionDisplay: 'none'
+    autoAuth: 'true'
   });
 
   res.send(dashboardHtml);
 });
 
-// Main route
+// Main route goes to authentication page
 app.get('/', (req, res) => {
   const validUsersArray = Object.keys(bpmData);
   const validUsersString = validUsersArray.map(u => `'${u}'`).join(', ');
     
-  const dashboardHtml = loadTemplate('dashboard', {
+  const authHtml = loadTemplate('authentication', {
     numSeats: NUM_SEATS,
-    validUsersString: validUsersString,
-    userId: '',
-    autoAuth: 'false',
-    authSectionDisplay: 'block',
-    mainSectionDisplay: 'none'
+    validUsersString: validUsersString
   });
 
-  res.send(dashboardHtml);
+  res.send(authHtml);
 });
 
 // Server startup
