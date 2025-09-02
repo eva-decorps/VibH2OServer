@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Room Selection - Emotional Map</title>
+  
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: Arial, sans-serif;
+      background: #0d142b;
+      color: #e0e6f0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .container {
+      text-align: center;
+      padding: 40px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 20px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+
+    h1 {
+      margin-bottom: 40px;
+      font-size: 2.5rem;
+      color: #e0e6f0;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    }
+
+    .room-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 30px;
+      margin-top: 30px;
+    }
+
+    .room-button {
+      padding: 30px 40px;
+      font-size: 1.5rem;
+      font-weight: bold;
+      border: none;
+      border-radius: 15px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-decoration: none;
+      display: block;
+      color: white;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+      min-width: 200px;
+    }
+
+    .room-button:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+      background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+    }
+
+    .room-button:active {
+      transform: translateY(-2px);
+    }
+
+    .room-1 { background: linear-gradient(135deg, #ff6b6b 0%, #ff8e53 100%); }
+    .room-2 { background: linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%); }
+    .room-3 { background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); color: #333; }
+    .room-4 { background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); color: #333; }
+
+    .room-1:hover { background: linear-gradient(135deg, #ff8e53 0%, #ff6b6b 100%); }
+    .room-2:hover { background: linear-gradient(135deg, #44a08d 0%, #4ecdc4 100%); }
+    .room-3:hover { background: linear-gradient(135deg, #fed6e3 0%, #a8edea 100%); }
+    .room-4:hover { background: linear-gradient(135deg, #fcb69f 0%, #ffecd2 100%); }
+
+    .subtitle {
+      margin-bottom: 20px;
+      font-size: 1.2rem;
+      color: #a0a6c0;
+      opacity: 0.8;
+    }
+
+    @media (max-width: 768px) {
+      .room-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+      }
+      
+      .container {
+        margin: 20px;
+        padding: 30px;
+      }
+      
+      h1 {
+        font-size: 2rem;
+      }
+      
+      .room-button {
+        padding: 25px 35px;
+        font-size: 1.3rem;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>🫀 Emotional Map</h1>
+    <p class="subtitle">Select a room to view the BPM data</p>
+
+
+<div class="room-grid">
+  <button data-room="1" class="room-button room-1">Room 1</button>
+  <button data-room="2" class="room-button room-2">Room 2</button>
+  <button data-room="3" class="room-button room-3">Room 3</button>
+  <button data-room="4" class="room-button room-4">Room 4</button>
+</div>
+
+<script>
+
+  // Get user id and room id
+  const pathParts = window.location.pathname.split("/");
+  const userId = pathParts[2];
+
+  // Button listener
+  document.querySelectorAll(".room-button").forEach(btn => {
+    btn.addEventListener("click", () => {
+      // Go to user graph for specified room
+      const roomId = btn.getAttribute("data-room");
+      window.location.href = `/room/${roomId}/${userId}`;
+    });
+  });
+</script>
+
+
+
+
+  </div>
+
+</body>
+
+</html>

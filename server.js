@@ -1,5 +1,5 @@
 // Simple Node.js server to display BPM chart
-const { timeStamp } = require('console');
+//const { timeStamp } = require('console');
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
@@ -237,9 +237,7 @@ const udpPort = new osc.UDPPort({
 
 // Listen for OSC messages and store data
 udpPort.on("message", (oscMsg, timeTag, info) => {
-  //console.log("Received OSC message:", oscMsg);
-  
-  // Parse address to feetch id
+
   const match = oscMsg.address.match(/^\/oh1\/(\d+)\/bpm$/);
   if (match) {
     const id = parseInt(match[1], 10);
@@ -326,6 +324,56 @@ app.get('/api/auth/:userId', (req, res) => {
   } else {
     res.status(404).json({ success: false, message: 'User not found' });
   }
+});
+
+// Room selection route after authentication
+app.get('/room-selection/:userId', (req, res) => {
+  const { userId } = req.params;
+  
+  // Validate user exists
+  if (!bpmData[userId]) {
+    const errorHtml = loadTemplate('error', {
+      userId: userId,
+      numSeats: NUM_SEATS
+    });
+    res.status(404).send(errorHtml);
+    return;
+  }
+
+  const roomSelectionHtml = loadTemplate('room-selection', {
+    userId: userId
+  });
+  res.send(roomSelectionHtml);
+});
+
+// Get the right graph for the room and user
+app.get('/room/:roomId/:userId', (req, res) => {
+  const { roomId, userId } = req.params;
+
+  if (!bpmData[userId]) {
+    const errorHtml = loadTemplate('error', {
+      userId: req.params.userId,
+      numSeats: NUM_SEATS
+    });
+
+    res.status(404).send(errorHtml);
+    return;
+  }
+
+  const validUsersArray = Object.keys(bpmData);
+  const validUsersString = validUsersArray.map(u => `'${u}'`).join(', ');
+
+  const dashboardHtml = loadTemplate('dashboard', {
+    numSeats: NUM_SEATS,
+    validUsersString: validUsersString,
+    userId: userId,
+    roomId: roomId,
+    autoAuth: 'true',
+    authSectionDisplay: 'none',
+    mainSectionDisplay: 'none'
+  });
+
+  res.send(dashboardHtml);
 });
 
 // Authentification route for auth with link 

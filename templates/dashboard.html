@@ -171,8 +171,10 @@
           if (data.success) {
             statusDiv.innerHTML = `<div class="status success">✅ Authentifié: ${data.profile}</div>`;
             currentUser = userId;
-            showMainSection();
-            loadBpmData(userId);
+            // Redirect to room selection instead of showing main section
+            setTimeout(() => {
+              window.location.href = `/room-selection/${userId}`;
+            }, 1000);
           } else {
             statusDiv.innerHTML = '<div class="status error">❌ Échec authentification</div>';
           }
