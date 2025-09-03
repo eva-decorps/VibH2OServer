@@ -397,6 +397,18 @@ app.get('/auth/:userId', (req, res) => {
   res.send(roomSelectionHtml);
 });
 
+// Error authenticating
+app.get('/error/:userId', (req, res) => {
+  let userId = req.params.userId;
+
+  const errorHtml = loadTemplate('error', {
+    userId: userId,
+    numSeats: NUM_SEATS
+  });
+
+  res.status(404).send(errorHtml);
+});
+
 // Main route goes to authentication page
 app.get('/', (req, res) => {
   const validUsersArray = Object.keys(bpmData);

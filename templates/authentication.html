@@ -117,8 +117,9 @@
       let userId = document.getElementById('userIdInput').value.trim();
       const statusDiv = document.getElementById('authStatus');
 
+      // Check if user ID is invalid and redirect to error page
       if (!validUsers.includes(userId)) {
-        statusDiv.innerHTML = '<div class="status error">❌ Invalid id. Valid ids within 1 and {{numSeats}}.</div>';
+        window.location.href = `/error/${userId}`;
         return;
       }
 
