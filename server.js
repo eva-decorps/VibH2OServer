@@ -1,5 +1,4 @@
 // Simple Node.js server to display BPM chart
-//const { timeStamp } = require('console');
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
@@ -343,6 +342,7 @@ app.get('/room-selection/:userId', (req, res) => {
   const roomSelectionHtml = loadTemplate('room-selection', {
     userId: userId
   });
+
   res.send(roomSelectionHtml);
 });
 
@@ -380,6 +380,7 @@ app.get('/room/:roomId/:userId', (req, res) => {
 app.get('/auth/:userId', (req, res) => {
   let { userId } = req.params;
 
+  // Make sure user exists
   if (!bpmData[userId]) {
     const errorHtml = loadTemplate('error', {
       userId: req.params.userId,
@@ -389,12 +390,11 @@ app.get('/auth/:userId', (req, res) => {
     return;
   }
 
-  const dashboardHtml = loadTemplate('dashboard', {
-    userId: userId,
-    autoAuth: 'true'
+  const roomSelectionHtml = loadTemplate('room-selection', {
+    userId: userId
   });
-
-  res.send(dashboardHtml);
+  
+  res.send(roomSelectionHtml);
 });
 
 // Main route goes to authentication page
