@@ -255,6 +255,12 @@
     let startTime = null;
     let timerInterval = null;
 
+    // Initialize the status text with room number
+    function initializeStatusText() {
+      const statusText = document.getElementById('statusText');
+      statusText.textContent = `Ready to record for room ${roomId}`;
+    }
+
     function toggleRecording() {
       const recordButton = document.getElementById('recordButton');
       const buttonText = document.getElementById('buttonText');
@@ -269,7 +275,7 @@
         
         recordButton.className = 'record-button stop';
         buttonText.textContent = 'STOP';
-        statusText.textContent = 'Recording in progress...';
+        statusText.textContent = `Recording in progress for room ${roomId}...`;
         recordingIndicator.classList.add('show');
         
         startTimer();
@@ -278,7 +284,7 @@
         isRecording = false;
         
         recordButton.style.display = 'none';
-        statusText.textContent = 'Recording completed';
+        statusText.textContent = `Recording completed for room ${roomId}`;
         recordingIndicator.classList.remove('show');
         controlButtons.classList.add('show');
         
@@ -319,7 +325,7 @@
       recordButton.style.display = 'flex';
       recordButton.className = 'record-button record';
       buttonText.textContent = 'RECORD';
-      statusText.textContent = 'Ready to record';
+      statusText.textContent = `Ready to record for room ${roomId}`;
       recordingIndicator.classList.remove('show');
       controlButtons.classList.remove('show');
       timerDisplay.textContent = '00:00';
@@ -418,6 +424,9 @@
         //releaseWakeLock();
       }
     });
+
+    // Initialize the page with room-specific status text
+    document.addEventListener('DOMContentLoaded', initializeStatusText);
 
   </script>
 </body>
