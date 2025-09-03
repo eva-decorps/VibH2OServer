@@ -289,17 +289,34 @@ udpPort.on("message", (oscMsg, timeTag, info) => {
     if (userData[id]) {
 
       // Check at what stage it is
-      // TODO: find a better way to do it
+      const bpm = parseInt(oscMsg.args[0].value);
+      const timestamp = parseInt(Date.now()); // timestamp in ms
       var idStatus = -1;
-      if (userData[id].baseline.status == Status.RECORDING) idStatus = 0;
-      else if (userData[id].room1.status == Status.RECORDING) idStatus = 1;
-      else if (userData[id].room2.status == Status.RECORDING) idStatus = 2;
-      else if (userData[id].room3.status == Status.RECORDING) idStatus = 3;
-      else if (userData[id].room4.status == Status.RECORDING) idStatus = 4;
+      
+      // Add data
+      if (userData[id].baseline.status == Status.RECORDING) {
+        idStatus = 0;
+        userData[id].baseline.data.bpm.push(bpm);
+        userData[id].baseline.data.timestamp.push(timestamp);
+      } else if (userData[id].room1.status == Status.RECORDING) {
+        idStatus = 1;
+        userData[id].room1.data.bpm.push(bpm);
+        userData[id].room1.data.timestamp.push(timestamp);
+      } else if (userData[id].room2.status == Status.RECORDING) {
+        idStatus = 2;
+        userData[id].room2.data.bpm.push(bpm);
+        userData[id].room2.data.timestamp.push(timestamp);
+      } else if (userData[id].room3.status == Status.RECORDING) { 
+        idStatus = 3;
+        userData[id].room3.data.bpm.push(bpm);
+        userData[id].room3.data.timestamp.push(timestamp);
+      } else if (userData[id].room4.status == Status.RECORDING) {
+        idStatus = 4;
+        userData[id].room4.data.bpm.push(bpm);
+        userData[id].room4.data.timestamp.push(timestamp);
+      }
 
-      const bpm = oscMsg.args[0].value;
-      const timestamp = Date.now(); // timestamp in ms
-
+      // Also store it in case of a server crash
       // Build folder path
       const userFolder = path.join(__dirname, "user", String(id));
       // Ensure folder exists
