@@ -224,8 +224,52 @@ const landmarks = loadLandmarks(avgBpm.time[0]);
 // OSC
 ////
 
-// id, stage (-1 =  not recording, 0 = baseline, 1 = 1st room, 2 = 2nd room ...)
-const activeID = {1: 0, 2: 1, 5: 4, 7: -1};
+const Status = Object.freeze({
+  PENDING: "PENDING",
+  RECORDING: "RECORDING",
+  SAVED: "SAVED"
+});
+
+var userData = {};
+
+userData[1] = {
+    baseline: {      
+      status: Status.SAVED,
+      data: {
+        bpm: [],
+        timestamp: []
+      }
+    },
+    room1: {
+      status: Status.SAVED,
+      data: {
+        bpm: [],
+        timestamp: []
+      }
+    },
+    room2: {
+      status: Status.RECORDING,
+      data: {
+        bpm: [],
+        timestamp: []
+      }
+    },
+    room3: {
+      status: Status.PENDING,
+      data: {
+        bpm: [],
+        timestamp: []
+      }
+    },
+    room4: {
+      status: Status.PENDING,
+      data: {
+        bpm: [],
+        timestamp: []
+      }
+    }
+}
+
 
 // Create an OSC UDP Port on localhost, port 8000
 const udpPort = new osc.UDPPort({
@@ -242,10 +286,17 @@ udpPort.on("message", (oscMsg, timeTag, info) => {
     const id = parseInt(match[1], 10);
 
     // Check if it is currently in use
-    if (id in activeID) {
+    if (userData[id]) {
 
       // Check at what stage it is
-      const idStatus = activeID[id];
+      // TODO: find a better way to do it
+      var idStatus = -1;
+      if (userData[id].baseline.status == Status.RECORDING) idStatus = 0;
+      else if (userData[id].room1.status == Status.RECORDING) idStatus = 1;
+      else if (userData[id].room2.status == Status.RECORDING) idStatus = 2;
+      else if (userData[id].room3.status == Status.RECORDING) idStatus = 3;
+      else if (userData[id].room4.status == Status.RECORDING) idStatus = 4;
+
       const bpm = oscMsg.args[0].value;
       const timestamp = Date.now(); // timestamp in ms
 
@@ -310,27 +361,12 @@ app.get('/api/bpm/:userId', (req, res) => {
   }
 });
 
-// Authentication route
-app.get('/api/auth/:userId', (req, res) => {
-  const { userId } = req.params;
-  
-  if (bpmData[userId]) {
-    res.json({
-      success: true,
-      userId: userId,
-      profile: bpmData[userId].name
-    });
-  } else {
-    res.status(404).json({ success: false, message: 'User not found' });
-  }
-});
-
 // Room selection route after authentication
 app.get('/room-selection/:userId', (req, res) => {
   const { userId } = req.params;
   
   // Validate user exists
-  if (!bpmData[userId]) {
+  if (!userData[userId]) {
     const errorHtml = loadTemplate('error', {
       userId: userId,
       numSeats: NUM_SEATS
@@ -350,7 +386,8 @@ app.get('/room-selection/:userId', (req, res) => {
 app.get('/room/:roomId/:userId', (req, res) => {
   const { roomId, userId } = req.params;
 
-  if (!bpmData[userId]) {
+  // If user doesn't exist throw error
+  if (!userData[userId]) {
     const errorHtml = loadTemplate('error', {
       userId: req.params.userId,
       numSeats: NUM_SEATS
@@ -360,28 +397,46 @@ app.get('/room/:roomId/:userId', (req, res) => {
     return;
   }
 
-  const validUsersArray = Object.keys(bpmData);
-  const validUsersString = validUsersArray.map(u => `'${u}'`).join(', ');
+  // If user exist check room status
+  // Retrieve room status depending on id (should find a better way to do it)
+  var roomStatus = Status.PENDING;
+  if (roomId == 1) roomStatus = userData[userId].room1.status;
+  if (roomId == 2) roomStatus = userData[userId].room2.status;
+  if (roomId == 3) roomStatus = userData[userId].room3.status;
+  if (roomId == 4) roomStatus = userData[userId].room4.status;
 
-  const dashboardHtml = loadTemplate('dashboard', {
-    numSeats: NUM_SEATS,
-    validUsersString: validUsersString,
-    userId: userId,
-    roomId: roomId,
-    autoAuth: 'true',
-    authSectionDisplay: 'none',
-    mainSectionDisplay: 'none'
-  });
+  if (roomStatus== Status.PENDING) {
+    const recordHtml = loadTemplate('record', {
+      userId: userId,
+      roomId: roomId
+    });
 
-  res.send(dashboardHtml);
+    res.send(recordHtml);
+  } else if (roomStatus == Status.RECORDING) {
+    // TODO: show the time we stopped at
+    const recordHtml = loadTemplate('record', {
+      userId: userId,
+      roomId: roomId
+    });
+
+    res.send(recordHtml);
+  } else if (roomStatus == Status.SAVED) {
+    const dashboardHtml = loadTemplate('dashboard', {
+      userId: userId,
+      roomId: roomId,
+      autoAuth: 'true'
+    });
+
+    res.send(dashboardHtml);
+  }
 });
 
-// Authentication route for auth with link 
+// Authentication route
 app.get('/auth/:userId', (req, res) => {
   let { userId } = req.params;
 
-  // Make sure user exists
-  if (!bpmData[userId]) {
+  // User doesn't exist throw error
+  if (!userData[userId]) {
     const errorHtml = loadTemplate('error', {
       userId: req.params.userId,
       numSeats: NUM_SEATS
@@ -390,6 +445,7 @@ app.get('/auth/:userId', (req, res) => {
     return;
   }
 
+  // Else redirect toward room selection
   const roomSelectionHtml = loadTemplate('room-selection', {
     userId: userId
   });

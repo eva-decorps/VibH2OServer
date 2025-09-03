@@ -111,35 +111,10 @@
   </div>
 
   <script>
-    const validUsers = [{{validUsersString}}];
-
     function authenticateUser() {
+      // Go to authentication
       let userId = document.getElementById('userIdInput').value.trim();
-      const statusDiv = document.getElementById('authStatus');
-
-      // Check if user ID is invalid and redirect to error page
-      if (!validUsers.includes(userId)) {
-        window.location.href = `/error/${userId}`;
-        return;
-      }
-
-      fetch(`/api/auth/${userId}`)
-        .then(response => response.json())
-        .then(data => {
-          if (data.success) {
-            statusDiv.innerHTML = `<div class="status success">✅ Authentifié: ${data.profile}</div>`;
-            // Redirect to room selection
-            setTimeout(() => {
-              window.location.href = `/room-selection/${userId}`;
-            }, 1000);
-          } else {
-            statusDiv.innerHTML = '<div class="status error">❌ Échec authentification</div>';
-          }
-        })
-        .catch(error => {
-          console.error('Erreur:', error);
-          statusDiv.innerHTML = '<div class="status error">❌ Erreur réseau</div>';
-        });
+      window.location.href = `/auth/${userId}`;
     }
 
     // Allow Enter key to submit

@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Recording - Emotional Map</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+      font-family: Arial, sans-serif;
+      background: #0d142b;
+      color: #e0e6f0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+    }
+
+    .container {
+      text-align: center;
+      padding: 40px 30px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 20px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      width: 90%;
+      max-width: 400px;
+      min-height: 500px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    h1 {
+      margin-bottom: 20px;
+      font-size: 2rem;
+      color: #e0e6f0;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    }
+
+    .status-text {
+      font-size: 1.2rem;
+      color: #a0a6c0;
+      margin-bottom: 30px;
+      opacity: 0.9;
+    }
+
+    .timer-display {
+      font-size: 3rem;
+      font-weight: bold;
+      color: #e0e6f0;
+      margin: 30px 0;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+      font-family: 'Courier New', monospace;
+      letter-spacing: 2px;
+    }
+
+    .record-button {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      border: none;
+      cursor: pointer;
+      font-size: 1.1rem;
+      font-weight: bold;
+      color: white;
+      margin: 20px auto;
+      transition: all 0.3s ease;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .record-button.record {
+      background: linear-gradient(135deg, #ff6b6b 0%, #ff8e53 100%);
+    }
+
+    .record-button.record:hover {
+      transform: scale(1.05);
+      background: linear-gradient(135deg, #ff8e53 0%, #ff6b6b 100%);
+    }
+
+    .record-button.stop {
+      background: linear-gradient(135deg, #666 0%, #333 100%);
+      animation: pulse 2s infinite;
+    }
+
+    .record-button.stop:hover {
+      transform: scale(1.05);
+      background: linear-gradient(135deg, #333 0%, #666 100%);
+    }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3), 0 0 0 0 rgba(255, 107, 107, 0.7); }
+      50% { box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3), 0 0 0 20px rgba(255, 107, 107, 0); }
+      100% { box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3), 0 0 0 0 rgba(255, 107, 107, 0); }
+    }
+
+    .control-buttons {
+      display: none;
+      flex-direction: column;
+      gap: 15px;
+      margin-top: 30px;
+    }
+
+    .control-buttons.show {
+      display: flex;
+    }
+
+    .action-button {
+      padding: 15px 30px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      color: white;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+      min-height: 50px;
+    }
+
+    .action-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .action-button:active {
+      transform: translateY(0);
+    }
+
+    .cancel-button {
+      background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+    }
+
+    .cancel-button:hover {
+      background: linear-gradient(135deg, #e67e22 0%, #f39c12 100%);
+    }
+
+    .back-button {
+      background: linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%);
+    }
+
+    .back-button:hover {
+      background: linear-gradient(135deg, #44a08d 0%, #4ecdc4 100%);
+    }
+
+    .recording-indicator {
+      display: none;
+      color: #ff6b6b;
+      font-size: 1rem;
+      margin-bottom: 10px;
+      animation: blink 1.5s infinite;
+    }
+
+    .recording-indicator.show {
+      display: block;
+    }
+
+    @keyframes blink {
+      0%, 50% { opacity: 1; }
+      51%, 100% { opacity: 0.3; }
+    }
+
+    @media (max-width: 480px) {
+      .container {
+        padding: 30px 20px;
+        width: 95%;
+        min-height: 450px;
+      }
+      
+      h1 {
+        font-size: 1.8rem;
+      }
+      
+      .timer-display {
+        font-size: 2.5rem;
+        margin: 20px 0;
+      }
+      
+      .record-button {
+        width: 100px;
+        height: 100px;
+        font-size: 1rem;
+      }
+      
+      .action-button {
+        padding: 12px 25px;
+        font-size: 1rem;
+        min-height: 45px;
+      }
+      
+      .status-text {
+        font-size: 1.1rem;
+      }
+    }
+
+    @media (max-height: 600px) {
+      .container {
+        min-height: auto;
+        padding: 25px 20px;
+      }
+      
+      .timer-display {
+        font-size: 2.2rem;
+        margin: 15px 0;
+      }
+      
+      h1 {
+        font-size: 1.6rem;
+        margin-bottom: 15px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div>
+      <h1>🫀 Emotional Map</h1>
+      <div class="recording-indicator" id="recordingIndicator">● REC</div>
+      <div class="status-text" id="statusText">Ready to record</div>
+      <div class="timer-display" id="timerDisplay">00:00</div>
+    </div>
+
+    <div>
+      <button class="record-button record" id="recordButton" onclick="toggleRecording()">
+        <span id="buttonText">RECORD</span>
+      </button>
+
+      <div class="control-buttons" id="controlButtons">
+        <button class="action-button cancel-button" onclick="cancelRecording()">
+          Cancel
+        </button>
+        <button class="action-button back-button" onclick="backToRoomSelection()">
+          Save
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+
+    // Get user id and room id
+    const pathParts = window.location.pathname.split("/");
+    const roomId = pathParts[2];
+    const userId = pathParts[3];
+
+    let isRecording = false;
+    let startTime = null;
+    let timerInterval = null;
+
+    function toggleRecording() {
+      const recordButton = document.getElementById('recordButton');
+      const buttonText = document.getElementById('buttonText');
+      const statusText = document.getElementById('statusText');
+      const recordingIndicator = document.getElementById('recordingIndicator');
+      const controlButtons = document.getElementById('controlButtons');
+
+      if (!isRecording) {
+        // Start recording
+        isRecording = true;
+        startTime = Date.now();
+        
+        recordButton.className = 'record-button stop';
+        buttonText.textContent = 'STOP';
+        statusText.textContent = 'Recording in progress...';
+        recordingIndicator.classList.add('show');
+        
+        startTimer();
+      } else {
+        // Stop recording
+        isRecording = false;
+        
+        recordButton.style.display = 'none';
+        statusText.textContent = 'Recording completed';
+        recordingIndicator.classList.remove('show');
+        controlButtons.classList.add('show');
+        
+        stopTimer();
+      }
+    }
+
+    function startTimer() {
+      timerInterval = setInterval(() => {
+        const elapsed = Date.now() - startTime;
+        const minutes = Math.floor(elapsed / 60000);
+        const seconds = Math.floor((elapsed % 60000) / 1000);
+        
+        document.getElementById('timerDisplay').textContent = 
+          `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+      }, 1000);
+    }
+
+    function stopTimer() {
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+    }
+
+    function cancelRecording() {
+      // Reset to initial state
+      isRecording = false;
+      startTime = null;
+      
+      const recordButton = document.getElementById('recordButton');
+      const buttonText = document.getElementById('buttonText');
+      const statusText = document.getElementById('statusText');
+      const recordingIndicator = document.getElementById('recordingIndicator');
+      const controlButtons = document.getElementById('controlButtons');
+      const timerDisplay = document.getElementById('timerDisplay');
+      
+      recordButton.style.display = 'flex';
+      recordButton.className = 'record-button record';
+      buttonText.textContent = 'RECORD';
+      statusText.textContent = 'Ready to record';
+      recordingIndicator.classList.remove('show');
+      controlButtons.classList.remove('show');
+      timerDisplay.textContent = '00:00';
+      
+      stopTimer();
+    }
+
+    function backToRoomSelection() {
+      // Save data and go back to room selection
+      window.location.href = `/room-selection/${userId}`;
+    }
+
+    // Prevent screen sleep during recording (if supported)
+    let wakeLock = null;
+
+    async function requestWakeLock() {
+      try {
+        if ('wakeLock' in navigator) {
+          wakeLock = await navigator.wakeLock.request('screen');
+        }
+      } catch (err) {
+        console.log('Wake lock not supported:', err);
+      }
+    }
+
+    function releaseWakeLock() {
+      if (wakeLock) {
+        wakeLock.release();
+        wakeLock = null;
+      }
+    }
+
+    // Request wake lock when recording starts
+    document.getElementById('recordButton').addEventListener('click', () => {
+      if (!isRecording) {
+        // TODO: send info to api
+        requestWakeLock();
+      } else {
+        // TODO: send info to api
+        releaseWakeLock();
+      }
+    });
+
+    // Clean up wake lock when page is hidden
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden' && wakeLock) {
+        releaseWakeLock();
+      }
+    });
+
+  </script>
+</body>
+</html>
