@@ -208,6 +208,23 @@ function loadLandmarks(t0) {
   return landmarks;
 }
 
+function deleteUserFile(id, idStatus) {
+  const userFolder = path.join(__dirname, "user", String(id));
+
+  let filePath;
+  if (idStatus === 0) {
+    filePath = path.join(userFolder, "baseline.txt");
+  } else if (idStatus > 0 && idStatus < 5) {
+    filePath = path.join(userFolder, `stage_${idStatus}.txt`);
+  }
+
+  if (filePath && fs.existsSync(filePath)) {
+    fs.unlinkSync(filePath); // deletes the file
+  } else {
+    console.log("File not found:", filePath);
+  }
+}
+
 
 ////
 // BPM DATA LOADING AT STARTUP
@@ -248,7 +265,7 @@ userData[1] = {
       }
     },
     room2: {
-      status: Status.RECORDING,
+      status: Status.PENDING,
       data: {
         bpm: [],
         timestamp: []
@@ -359,6 +376,7 @@ udpPort.open();
 ////
 
 // Get bpm data
+// TODO: need to add room info
 app.get('/api/bpm/:userId', (req, res) => {
   const { userId } = req.params;
   
@@ -472,7 +490,7 @@ app.get('/auth/:userId', (req, res) => {
 
 // Error authenticating
 app.get('/error/:userId', (req, res) => {
-  let userId = req.params.userId;
+  let { userId } = req.params;
 
   const errorHtml = loadTemplate('error', {
     userId: userId,
@@ -484,15 +502,152 @@ app.get('/error/:userId', (req, res) => {
 
 // Main route goes to authentication page
 app.get('/', (req, res) => {
-  const validUsersArray = Object.keys(bpmData);
-  const validUsersString = validUsersArray.map(u => `'${u}'`).join(', ');
-    
   const authHtml = loadTemplate('authentication', {
-    numSeats: NUM_SEATS,
-    validUsersString: validUsersString
+    numSeats: NUM_SEATS
   });
 
   res.send(authHtml);
+});
+
+// Start recording for specified room
+app.post('/api/record/start/:userId/:roomId', (req, res) => {
+  const { userId, roomId } = req.params;
+  
+  // Validate user exists
+  if (!userData[userId]) {
+    const errorHtml = loadTemplate('error', {
+      userId: userId,
+      numSeats: NUM_SEATS
+    });
+
+    res.status(404).send(errorHtml);
+  }
+
+  // Validate room ID (1-4)
+  if (roomId < 1 || roomId > 4) {
+    return res.status(400).json({ 
+      success: false, 
+      message: 'Invalid room ID' 
+    });
+  }
+
+  // Get the room key based on roomId
+  const roomKey = `room${roomId}`;
+
+  // Check if room exists in userData
+  if (!userData[userId][roomKey]) {
+    return res.status(400).json({ 
+      success: false, 
+      message: 'Room not found for user' 
+    });
+  }
+
+  // Set status to RECORDING
+  userData[userId][roomKey].status = Status.RECORDING;
+  // If another room was recording set it to SAVED
+  for (let i=1; i<=4; i++) {
+    if (i!=roomId) {
+      const key = `room${i}`;
+      if (userData[userId][key].status == Status.RECORDING) userData[userId][key].status = Status.SAVED;
+    }
+  }
+
+  res.json({ 
+    success: true, 
+    message: 'Recording started',
+    status: Status.RECORDING
+  });
+});
+
+// Stop recording for specified room
+app.post('/api/record/stop/:userId/:roomId', (req, res) => {
+  const { userId, roomId } = req.params;
+  
+  // Validate user exists
+  if (!userData[userId]) {
+    const errorHtml = loadTemplate('error', {
+      userId: userId,
+      numSeats: NUM_SEATS
+    });
+
+    res.status(404).send(errorHtml);
+  }
+
+  // Validate room ID (1-4)
+  if (roomId < 1 || roomId > 4) {
+    return res.status(400).json({ 
+      success: false, 
+      message: 'Invalid room ID' 
+    });
+  }
+
+  // Get the room key based on roomId
+  const roomKey = `room${roomId}`;
+
+  // Check if room exists in userData
+  if (!userData[userId][roomKey]) {
+    return res.status(400).json({ 
+      success: false, 
+      message: 'Room not found for user' 
+    });
+  }
+
+  // Set status to SAVED
+  userData[userId][roomKey].status = Status.SAVED;
+
+  res.json({ 
+    success: true, 
+    message: 'Recording stopped',
+    status: Status.RECORDING
+  });
+});
+
+// Cancel recording for specified room
+app.post('/api/record/cancel/:userId/:roomId', (req, res) => {
+  const { userId, roomId } = req.params;
+  
+  // Validate user exists
+  if (!userData[userId]) {
+    const errorHtml = loadTemplate('error', {
+      userId: userId,
+      numSeats: NUM_SEATS
+    });
+
+    res.status(404).send(errorHtml);
+  }
+
+  // Validate room ID (1-4)
+  if (roomId < 1 || roomId > 4) {
+    return res.status(400).json({ 
+      success: false, 
+      message: 'Invalid room ID' 
+    });
+  }
+
+  // Get the room key based on roomId
+  const roomKey = `room${roomId}`;
+
+  // Check if room exists in userData
+  if (!userData[userId][roomKey]) {
+    return res.status(400).json({ 
+      success: false, 
+      message: 'Room not found for user' 
+    });
+  }
+
+  // Set status to PENDING
+  userData[userId][roomKey].status = Status.PENDING;
+  // Reset data in dict
+  userData[userId][roomKey].data.bpm = [];
+  userData[userId][roomKey].data.timestamp = [];
+  // Delete files
+  deleteUserFile(userId, roomId);
+
+  res.json({ 
+    success: true, 
+    message: 'Recording cancelled',
+    status: Status.PENDING
+  });
 });
 
 // Server startup

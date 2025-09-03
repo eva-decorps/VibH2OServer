@@ -323,8 +323,24 @@
       recordingIndicator.classList.remove('show');
       controlButtons.classList.remove('show');
       timerDisplay.textContent = '00:00';
-      
-      stopTimer();
+
+      fetch(`/api/record/cancel/${userId}/${roomId}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            stopTimer();
+          } else {
+            console.error('Failed to cancel recording:', data.message);
+          }
+        })
+        .catch(error => {
+          console.error('Error calling cancel recording API:', error);
+        });
     }
 
     function backToRoomSelection() {
@@ -355,18 +371,51 @@
     // Request wake lock when recording starts
     document.getElementById('recordButton').addEventListener('click', () => {
       if (!isRecording) {
-        // TODO: send info to api
-        requestWakeLock();
+        // Call the POST API to stop recording
+        fetch(`/api/record/stop/${userId}/${roomId}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            requestWakeLock();
+          } else {
+            console.error('Failed to stop recording:', data.message);
+          }
+        })
+        .catch(error => {
+          console.error('Error calling stop recording API:', error);
+        });
+
       } else {
-        // TODO: send info to api
-        releaseWakeLock();
+        // Call the POST API to start recording
+        fetch(`/api/record/start/${userId}/${roomId}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            releaseWakeLock();
+          } else {
+            console.error('Failed to start recording:', data.message);
+          }
+        })
+        .catch(error => {
+          console.error('Error calling start recording API:', error);
+        });
       }
     });
 
     // Clean up wake lock when page is hidden
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'hidden' && wakeLock) {
-        releaseWakeLock();
+        //releaseWakeLock();
       }
     });
 
