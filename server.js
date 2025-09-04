@@ -7,7 +7,7 @@ const app = express();
 const PORT = 3000;
 
 // Middleware
-app.use(express.static('public'));
+app.use(express.static('.'));
 app.use(express.json());
 
 ////
@@ -366,6 +366,11 @@ udpPort.open();
 ////
 // ROUTES 
 ////
+
+// Handle CSS file requests
+app.get('/shared-styles.css', (req, res) => {
+  res.sendFile(path.join(__dirname, 'templates', 'shared-styles.css'));
+});
 
 // Get bpm data
 // TODO: need to add room info
