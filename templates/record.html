@@ -246,15 +246,28 @@
 
   <script>
 
-    // Get user id and room id
-    const pathParts = window.location.pathname.split("/");
-    const roomId = pathParts[2];
-    const userId = pathParts[3];
-
-    let isRecording = false;
-    let startTime = null;
+    // Get user id, room id and recording state
+    const roomId = {{roomId}};
+    const userId = {{userId}};
+    let isRecording = {{isRecording}};
+    let startTime = {{startTime}};
     let timerInterval = null;
 
+    // Init recording state
+    if (isRecording) {
+        const recordButton = document.getElementById('recordButton');
+        const buttonText = document.getElementById('buttonText');
+        const statusText = document.getElementById('statusText');
+        const recordingIndicator = document.getElementById('recordingIndicator');
+
+        recordButton.className = 'record-button stop';
+        buttonText.textContent = 'STOP';
+        statusText.textContent = `Recording in progress for room ${roomId}...`;
+        recordingIndicator.classList.add('show');
+        
+        startTimer();
+    }
+    
     // Initialize the status text with room number
     function initializeStatusText() {
       const statusText = document.getElementById('statusText');

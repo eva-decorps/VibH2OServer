@@ -252,6 +252,7 @@ var userData = {};
 userData[1] = {
     baseline: {      
       status: Status.SAVED,
+      startTime: null,
       data: {
         bpm: [],
         timestamp: []
@@ -259,6 +260,7 @@ userData[1] = {
     },
     room1: {
       status: Status.SAVED,
+      startTime: null,
       data: {
         bpm: [],
         timestamp: []
@@ -266,6 +268,7 @@ userData[1] = {
     },
     room2: {
       status: Status.PENDING,
+      startTime: null,
       data: {
         bpm: [],
         timestamp: []
@@ -273,6 +276,7 @@ userData[1] = {
     },
     room3: {
       status: Status.PENDING,
+      startTime: null,
       data: {
         bpm: [],
         timestamp: []
@@ -280,6 +284,7 @@ userData[1] = {
     },
     room4: {
       status: Status.PENDING,
+      startTime: null,
       data: {
         bpm: [],
         timestamp: []
@@ -308,29 +313,16 @@ udpPort.on("message", (oscMsg, timeTag, info) => {
       // Check at what stage it is
       const bpm = parseInt(oscMsg.args[0].value);
       const timestamp = parseInt(Date.now()); // timestamp in ms
-      var idStatus = -1;
       
-      // Add data
-      if (userData[id].baseline.status == Status.RECORDING) {
-        idStatus = 0;
-        userData[id].baseline.data.bpm.push(bpm);
-        userData[id].baseline.data.timestamp.push(timestamp);
-      } else if (userData[id].room1.status == Status.RECORDING) {
-        idStatus = 1;
-        userData[id].room1.data.bpm.push(bpm);
-        userData[id].room1.data.timestamp.push(timestamp);
-      } else if (userData[id].room2.status == Status.RECORDING) {
-        idStatus = 2;
-        userData[id].room2.data.bpm.push(bpm);
-        userData[id].room2.data.timestamp.push(timestamp);
-      } else if (userData[id].room3.status == Status.RECORDING) { 
-        idStatus = 3;
-        userData[id].room3.data.bpm.push(bpm);
-        userData[id].room3.data.timestamp.push(timestamp);
-      } else if (userData[id].room4.status == Status.RECORDING) {
-        idStatus = 4;
-        userData[id].room4.data.bpm.push(bpm);
-        userData[id].room4.data.timestamp.push(timestamp);
+      var idStatus = -1;
+      var roomKey = 'baseline';
+      for (let roomId=0; roomId<=4; roomId++) {
+        if (roomId>0) roomKey = `room${roomId}`;
+        if (userData[id][roomKey].status == Status.RECORDING) {
+          idStatus = roomId;
+          userData[id][roomKey].data.bpm.push(bpm);
+          userData[id][roomKey].data.timestamp.push(timestamp);
+        }
       }
 
       // Also store it in case of a server crash
@@ -432,26 +424,26 @@ app.get('/room/:roomId/:userId', (req, res) => {
     return;
   }
 
-  // If user exist check room status
-  // Retrieve room status depending on id (should find a better way to do it)
-  var roomStatus = Status.PENDING;
-  if (roomId == 1) roomStatus = userData[userId].room1.status;
-  if (roomId == 2) roomStatus = userData[userId].room2.status;
-  if (roomId == 3) roomStatus = userData[userId].room3.status;
-  if (roomId == 4) roomStatus = userData[userId].room4.status;
+  // If user exist check room status and start time
+  const roomKey = `room${roomId}`;
+  const roomStatus = userData[userId][roomKey].status;
+  const startTime = userData[userId][roomKey].startTime;
 
   if (roomStatus== Status.PENDING) {
     const recordHtml = loadTemplate('record', {
       userId: userId,
-      roomId: roomId
+      roomId: roomId,
+      isRecording: false,
+      startTime: startTime
     });
 
     res.send(recordHtml);
   } else if (roomStatus == Status.RECORDING) {
-    // TODO: show the time we stopped at
     const recordHtml = loadTemplate('record', {
       userId: userId,
-      roomId: roomId
+      roomId: roomId,
+      isRecording: true,
+      startTime: startTime
     });
 
     res.send(recordHtml);
@@ -544,11 +536,15 @@ app.post('/api/record/start/:userId/:roomId', (req, res) => {
 
   // Set status to RECORDING
   userData[userId][roomKey].status = Status.RECORDING;
+  userData[userId][roomKey].startTime = Date.now();
   // If another room was recording set it to SAVED
   for (let i=1; i<=4; i++) {
     if (i!=roomId) {
       const key = `room${i}`;
-      if (userData[userId][key].status == Status.RECORDING) userData[userId][key].status = Status.SAVED;
+      if (userData[userId][key].status == Status.RECORDING) {
+        userData[userId][key].status = Status.SAVED;
+        userData[userId][key].startTime = null;
+      }
     }
   }
 
@@ -594,6 +590,7 @@ app.post('/api/record/stop/:userId/:roomId', (req, res) => {
 
   // Set status to SAVED
   userData[userId][roomKey].status = Status.SAVED;
+  userData[userId][roomKey].startTime = null;
 
   res.json({ 
     success: true, 
@@ -637,6 +634,7 @@ app.post('/api/record/cancel/:userId/:roomId', (req, res) => {
 
   // Set status to PENDING
   userData[userId][roomKey].status = Status.PENDING;
+  userData[userId][roomKey].startTime = null;
   // Reset data in dict
   userData[userId][roomKey].data.bpm = [];
   userData[userId][roomKey].data.timestamp = [];
