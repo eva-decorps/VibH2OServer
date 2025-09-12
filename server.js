@@ -182,148 +182,51 @@ function initializeUserData() {
 // LOADING FUNCTIONS
 ////
 
-// ICI il fait refaire toute la logique 
-// load les data de user 
-// id max doit pas être en fonction des données existantes et tous les user doivent être initialisés
+// Load data if was already recorder
+function loadBpmDataFromFiles(userData) {
 
-// Load data from vib-eMotion BPM recording
-function loadBpmDataFromFiles() {
-  var maxID = 0;
-  const bpmData = {};
-  const filePath = path.join(__dirname, 'data', 'bpm_data.txt');
+  // Loop through all sensors
+  for (let i=1; i<=NUM_SEATS; i++) {
+    // Loop through all rooms
+    for (let room=1; room<=4; room++) {
+      var roomKey = `room${room}`;
+      var filePath = path.join(__dirname, 'user', `${i}`, `stage_${room}.txt`);
 
-  try {
-    const fileContent = fs.readFileSync(filePath, 'utf-8');
-    const lines = fileContent.split('\n');
+      if (!fs.existsSync(filePath)) {
+        // Skip if file does not exist
+        continue;
+      }
+
+      try {
+        const fileContent = fs.readFileSync(filePath, 'utf-8');
+        const lines = fileContent.split('\n');
     
-    for (const line of lines) {
-      // Match pattern like: "77, /98/ 66 1749735435400.;"
-      const match = line.match(/^(\d+),\s*\/(\d+)\/\s+(\d+)\s+(\d+)\.;/);
-      
-      if (match) {
-        const [, , id, bpm, timestamp] = match;
+        for (const line of lines) {
+          var match = line.match(/(\d+),\s*(\d+);/);
+          if (match) {
+            const [bpm, timestamp] = match;
+            userData[i][roomKey].data.bpm.push(parseInt(bpm));
+            userData[i][roomKey].data.timestamp.push(parseInt(timestamp));
+            userData[i][roomKey].status = Status.RECORDING;
+          }
+
+          match = line.match("stop;");
+          if (match) {
+            userData[i][roomKey].status = Status.SAVED;
+            userData[i][roomKey].startTime = null;
+          }
+
+        }
         
-        if (bpmData[id]) {
-          // If id already exists add data to the array
-          bpmData[id].data.push(parseInt(bpm));
-          bpmData[id].time.push(parseInt(timestamp)); // Unix timestamp format
-        } else {
-          // To find max id
-          if (maxID < parseInt(id)) {
-            maxID = id;
-          }
-          
-          // Else create new array
-          bpmData[id] = {
-            name: `Siège ${id}`,
-            data: [parseInt(bpm)],
-            time: [parseInt(timestamp)] // Unix timestamp format
-          }
+        if (userData[i][roomKey].status == Status.RECORDING) {
+          userData[i][roomKey].startTime = userData[i][roomKey].data.timestamp[0];
         }
+
+      } catch (err) {
+        console.error('Error reading or parsing the file:', err);
       }
-    }
-  } catch (err) {
-    console.error('Error reading or parsing the file:', err);
+    } 
   }
-    
-  if (maxID == 0) {
-    console.error('Error no data in file');
-  }
-
-  // Compute average BPM every second (1000 ms)
-  const averageBpm = calculateAverageBpm(bpmData, 5000);
-    
-  return [maxID, averageBpm.users, averageBpm.global];
-}
-
-// Compute average BPM for a given interval and apply the same temporal smoothing per user
-function calculateAverageBpm(bpmData, intervalMs = 1000) {
-  const userIds = Object.keys(bpmData);
-
-  if (userIds.length === 0) {
-    return { global: { name: 'Moyenne globale', data: [], time: [] }, users: {} };
-  }
-
-  // Find time bounds
-  let minTimestamp = Infinity;
-  let maxTimestamp = -Infinity;
-
-  userIds.forEach(id => {
-    const times = bpmData[id].time;
-    if (times.length > 0) {
-      minTimestamp = Math.min(minTimestamp, Math.min(...times));
-      maxTimestamp = Math.max(maxTimestamp, Math.max(...times));
-    }
-  });
-
-  // Invalid data
-  if (minTimestamp === Infinity) {
-    return { global: { name: 'Moyenne globale', data: [], time: [] }, users: {} };
-  }
-
-  const averageData = [];
-  const averageTime = [];
-  const userSmoothedData = {};
-
-  userIds.forEach(id => {
-    userSmoothedData[id] = {
-      name: id,
-      data: [],
-      time: []
-    };
-  });
-
-  // Loop over all time intervals
-  for (let currentTime = minTimestamp; currentTime <= maxTimestamp; currentTime += intervalMs) {
-    const intervalEnd = currentTime + intervalMs;
-    const userAverages = []; // All users' avg for this interval
-
-    userIds.forEach(id => {
-      const userData = bpmData[id];
-      const bpmValuesInInterval = []; // All bpm values for user in this interval
-
-      // Loop through all values, not optimal
-      for (let i = 0; i < userData.time.length; i++) {
-        const timestamp = userData.time[i];
-        if (timestamp >= currentTime && timestamp < intervalEnd) {
-          bpmValuesInInterval.push(userData.data[i]);
-        }
-      }
-
-      // Compute user avg in this interval
-      if (bpmValuesInInterval.length > 0) {
-        const userAverage = bpmValuesInInterval.reduce((sum, bpm) => sum + bpm, 0) / bpmValuesInInterval.length;
-        const roundedAvg = Math.round(userAverage * 100) / 100;
-
-        // Add user's value for this interval
-        userAverages.push(roundedAvg);
-
-        // Add smoothed value for this user
-        userSmoothedData[id].data.push(roundedAvg);
-        userSmoothedData[id].time.push(currentTime);
-      } else {
-        // Add null data to keep time alignment
-        userSmoothedData[id].data.push(null);
-        userSmoothedData[id].time.push(currentTime);
-      }
-    });
-
-    // Compute all users avg for this interval
-    if (userAverages.length > 0) {
-      const globalAverage = userAverages.reduce((sum, avg) => sum + avg, 0) / userAverages.length;
-      averageData.push(Math.round(globalAverage * 100) / 100);
-      averageTime.push(currentTime);
-    }
-  }
-
-  return {
-    global: {
-      name: 'Moyenne globale',
-      data: averageData,
-      time: averageTime
-    },
-    users: userSmoothedData
-  };
 }
 
 function loadLandmarks(t0) {
@@ -372,6 +275,28 @@ function deleteUserFile(id, idStatus) {
   }
 }
 
+function stopRecordingInFile(id, idStatus) {
+    const userFolder = path.join(__dirname, "user", String(id));
+
+  let filePath;
+  if (idStatus === 0) {
+    filePath = path.join(userFolder, "baseline.txt");
+  } else if (idStatus > 0 && idStatus < 5) {
+    filePath = path.join(userFolder, `stage_${idStatus}.txt`);
+  }
+
+  if (filePath && fs.existsSync(filePath)) {
+    // Write stop at the end of file
+    fs.appendFile(filePath, `stop;\n`, (err) => {
+      if (err) {
+        console.error("Error writing to file:", err);
+      }
+    });
+  } else {
+    console.log("File not found:", filePath);
+  }
+}
+
 ////
 // STATUS ENUM
 ////
@@ -386,12 +311,9 @@ const Status = Object.freeze({
 // BPM DATA LOADING AT STARTUP
 ////
 
-//const data = loadBpmDataFromFiles();
-//const bpmData = data[1];
-//const landmarks = loadLandmarks(bpmData.time[0]);
-
 // Initialize user data for all configured seats
 var userData = initializeUserData();
+loadBpmDataFromFiles(userData);
 
 ////
 // OSC
@@ -488,7 +410,7 @@ app.get('/api/bpm/:userId/:roomId', (req, res) => {
 
   // Check data exists
   
-  if (bpmData[userId]) {
+  if (userData[userId]) {
     res.json({
       success: true,
       userId: userId,
@@ -605,7 +527,7 @@ app.get('/auth/:userId', (req, res) => {
     res.status(404).send(errorHtml);
     return;
   }
-  
+
   // Else redirect toward user registration
   const userRegistrationHtml = loadTemplate('user-registration', {
     userId: userId
@@ -725,6 +647,9 @@ app.post('/api/record/stop/:userId/:roomId', (req, res) => {
   // Set status to SAVED
   userData[userId][roomKey].status = Status.SAVED;
   userData[userId][roomKey].startTime = null;
+
+  // Write stop in file to be sure it finished recording
+  stopRecordingInFile(userId, roomId);
 
   res.json({ 
     success: true, 
