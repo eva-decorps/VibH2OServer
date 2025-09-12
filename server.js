@@ -373,20 +373,19 @@ app.get('/shared-styles.css', (req, res) => {
 });
 
 // Get bpm data
-// TODO: need to add room info
-app.get('/api/bpm/:userId', (req, res) => {
-  const { userId } = req.params;
+app.get('/api/bpm/:userId/:roomId', (req, res) => {
+  const { userId, roomId } = req.params;
+  const roomKey = `room${roomId}`;
+
+  // Check data exists
   
   if (bpmData[userId]) {
     res.json({
       success: true,
       userId: userId,
-      profile: bpmData[userId].name,
-      bpmData: bpmData[userId].data,
-      time: bpmData[userId].time,
-      avg: avgBpm.data,
-      avgTime: avgBpm.time,
-      landmarks: landmarks
+      profile: `User ${userId}`,
+      bpmData: userData[userId][roomKey].data.bpm,
+      time: userData[userId][roomKey].data.timestamp
     });
   } else {
     res.status(404).json({ success: false, message: 'Data not found' });
