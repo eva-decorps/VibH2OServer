@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Registration Status - Emotional Map</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="/shared-styles.css">
+  
+  <style>
+    .subtitle {
+      margin-bottom: 40px;
+      font-size: 1.2rem;
+      color: #a0a6c0;
+      opacity: 0.8;
+      line-height: 1.4;
+    }
+
+    .button-list {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      margin-top: 30px;
+    }
+
+    .nav-button {
+      padding: 20px 30px;
+      font-size: 1.4rem;
+      font-weight: bold;
+      border: none;
+      border-radius: 15px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      color: white;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+      min-height: 70px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .nav-button:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    }
+
+    .nav-button:active {
+      transform: translateY(-1px);
+      transition: all 0.1s ease;
+    }
+
+    /* Button-specific gradients */
+    .first-connection { 
+      background: linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%); 
+    }
+    
+    .already-registered { 
+      background: linear-gradient(135deg, #ff6b6b 0%, #ff8e53 100%); 
+    }
+
+    /* Hover effects */
+    .first-connection:hover { 
+      background: linear-gradient(135deg, #44a08d 0%, #4ecdc4 100%); 
+    }
+    
+    .already-registered:hover { 
+      background: linear-gradient(135deg, #ff8e53 0%, #ff6b6b 100%); 
+    }
+
+    /* Add subtle animation on load */
+    .nav-button {
+      opacity: 0;
+      transform: translateY(20px);
+      animation: slideInUp 0.6s ease forwards;
+    }
+
+    .nav-button:nth-child(1) { animation-delay: 0.1s; }
+    .nav-button:nth-child(2) { animation-delay: 0.2s; }
+
+    @keyframes slideInUp {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Explanation section */
+    .explanation {
+      margin-top: 20px;
+      padding: 20px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      display: none;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: all 0.3s ease;
+    }
+
+    .explanation.show {
+      display: block;
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .explanation-text {
+      color: #a0a6c0;
+      font-size: 1.1rem;
+      line-height: 1.6;
+      margin-bottom: 20px;
+    }
+
+    .next-button {
+      padding: 15px 25px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+      color: #333;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+    }
+
+    .next-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+      background: linear-gradient(135deg, #fed6e3 0%, #a8edea 100%);
+    }
+
+    /* Mobile optimizations */
+    @media (max-width: 480px) {
+      .subtitle {
+        font-size: 1.1rem;
+        margin-bottom: 30px;
+      }
+      
+      .nav-button {
+        padding: 18px 25px;
+        font-size: 1.2rem;
+        min-height: 60px;
+      }
+      
+      .button-list {
+        gap: 15px;
+        margin-top: 20px;
+      }
+
+      .explanation {
+        padding: 15px;
+        margin-top: 15px;
+      }
+
+      .explanation-text {
+        font-size: 1rem;
+      }
+
+      .next-button {
+        padding: 12px 20px;
+        font-size: 1rem;
+      }
+    }
+
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>🫀 Emotional Map</h1>
+    <p class="subtitle">You are registered with sensor number <strong id="sensor-number">001</strong></p>
+
+    <div class="button-list">
+      <button id="first-connection-btn" class="nav-button first-connection">First Connection</button>
+      <button id="already-registered-btn" class="nav-button already-registered">Already Registered</button>
+    </div>
+
+    <div id="explanation" class="explanation">
+      <div class="explanation-text">
+        Welcome to your first connection! This system monitors your heart rate (BPM) data across different rooms. 
+        Each room represents a different environment where your emotional and physiological responses are tracked. 
+        You'll be able to view your BPM data and see how it changes in different spaces.
+      </div>
+      <button id="next-btn" class="next-button">Next</button>
+    </div>
+  </div>
+
+  <script>
+    // Get user id from URL (similar to room-selection page)
+    const userId = {{userId}};
+
+    // Set the sensor number (you can customize this logic)
+    document.getElementById("sensor-number").textContent = userId;
+
+    // Get DOM elements
+    const firstConnectionBtn = document.getElementById("first-connection-btn");
+    const alreadyRegisteredBtn = document.getElementById("already-registered-btn");
+    const buttonList = document.querySelector(".button-list");
+    const explanation = document.getElementById("explanation");
+    const nextBtn = document.getElementById("next-btn");
+
+    // First Connection button - toggles explanation and hides buttons
+    firstConnectionBtn.addEventListener("click", (e) => {
+      // Add visual feedback
+      firstConnectionBtn.style.transform = "scale(0.95)";
+      setTimeout(() => {
+        firstConnectionBtn.style.transform = "";
+      }, 150);
+
+      fetch(`/api/registration/new/${userId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      })
+      .then(response => response.json())
+      .then(data => {
+          if (data.success) {
+            // Hide buttons and show explanation
+            buttonList.style.display = 'none';
+            explanation.classList.add("show");
+          } else {
+            console.error('Failed to reset data for user:', data.message);
+          }
+      })
+      .catch(error => {
+        console.error('Error calling new registration API:', error);
+      });
+    });
+
+    // Already Registered button - redirect to room selection
+    alreadyRegisteredBtn.addEventListener("click", (e) => {
+      // Add visual feedback
+      alreadyRegisteredBtn.style.transform = "scale(0.95)";
+      setTimeout(() => {
+        alreadyRegisteredBtn.style.transform = "";
+      }, 150);
+
+      // Navigate to room selection after brief delay
+      setTimeout(() => {
+        window.location.href = `/room-selection/${userId}`;
+      }, 200);
+    });
+
+    // Next button - redirect to room selection
+    nextBtn.addEventListener("click", (e) => {
+      // Add visual feedback
+      nextBtn.style.transform = "scale(0.95)";
+      setTimeout(() => {
+        nextBtn.style.transform = "";
+      }, 150);
+
+      // Navigate to room selection after brief delay
+      setTimeout(() => {
+        window.location.href = `/room-selection/${userId}`;
+      }, 200);
+    });
+
+    // Add touch feedback for better mobile experience
+    document.querySelectorAll(".nav-button, .next-button").forEach(btn => {
+      btn.addEventListener("touchstart", () => {
+        btn.style.transform = "translateY(-1px) scale(0.98)";
+      });
+      
+      btn.addEventListener("touchend", () => {
+        setTimeout(() => {
+          btn.style.transform = "";
+        }, 100);
+      });
+    });
+  </script>
+</body>
+</html>

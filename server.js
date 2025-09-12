@@ -393,7 +393,28 @@ app.get('/api/bpm/:userId', (req, res) => {
   }
 });
 
-// Room selection route after authentication
+// User registration after authentication
+app.get('/user-registration/:userId', (req, res) => {
+  const { userId } = req.params;
+  
+  // Validate user exists
+  if (!userData[userId]) {
+    const errorHtml = loadTemplate('error', {
+      userId: userId,
+      numSeats: NUM_SEATS
+    });
+    res.status(404).send(errorHtml);
+    return;
+  }
+
+  const userRegistrationHtml = loadTemplate('user-registration', {
+    userId: userId
+  });
+
+  res.send(userRegistrationHtml);
+});
+
+// Room selection route after registration
 app.get('/room-selection/:userId', (req, res) => {
   const { userId } = req.params;
   
@@ -476,13 +497,13 @@ app.get('/auth/:userId', (req, res) => {
     res.status(404).send(errorHtml);
     return;
   }
-
-  // Else redirect toward room selection
-  const roomSelectionHtml = loadTemplate('room-selection', {
+  
+  // Else redirect toward user registration
+  const userRegistrationHtml = loadTemplate('user-registration', {
     userId: userId
   });
   
-  res.send(roomSelectionHtml);
+  res.send(userRegistrationHtml);
 });
 
 // Error authenticating
@@ -649,6 +670,41 @@ app.post('/api/record/cancel/:userId/:roomId', (req, res) => {
   res.json({ 
     success: true, 
     message: 'Recording cancelled',
+    status: Status.PENDING
+  });
+});
+
+// Reset user data for new registration
+app.post('/api/registration/new/:userId', (req, res) => {
+  const { userId } = req.params;
+  
+  // Validate user exists
+  if (!userData[userId]) {
+    const errorHtml = loadTemplate('error', {
+      userId: userId,
+      numSeats: NUM_SEATS
+    });
+
+    res.status(404).send(errorHtml);
+  }
+
+  for (let roomId = 1; roomId <= 4; roomId++) {
+    // Get the room key based on roomId
+    const roomKey = `room${roomId}`;
+
+    // Set status to PENDING
+    userData[userId][roomKey].status = Status.PENDING;
+    userData[userId][roomKey].startTime = null;
+    // Reset data in dict
+    userData[userId][roomKey].data.bpm = [];
+    userData[userId][roomKey].data.timestamp = [];
+    // Delete files
+    deleteUserFile(userId, roomId);
+  }
+
+  res.json({ 
+    success: true, 
+    message: 'Data successfully reset',
     status: Status.PENDING
   });
 });
