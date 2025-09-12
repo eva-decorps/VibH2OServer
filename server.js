@@ -6,6 +6,94 @@ const osc = require('osc');
 const app = express();
 const PORT = 3000;
 
+////
+// PARSE ARGUMENTS
+////
+
+// Parse command line arguments
+function parseCommandLineArgs() {
+  const args = process.argv.slice(2);
+  let numSeats = 10; // Default value
+  let oscPort = 8000; // Default OSC port
+  let serverPort = 3000; // Default server port
+
+  for (let i = 0; i < args.length; i++) {
+    switch (args[i]) {
+      case '--seats':
+      case '-s':
+        if (i + 1 < args.length) {
+          const seats = parseInt(args[i + 1]);
+          if (seats > 0) {
+            numSeats = seats;
+            i++; // Skip next argument as it's the value
+          } else {
+            console.error('❌ Error: Number of seats must be a positive integer');
+            process.exit(1);
+          }
+        }
+        break;
+      case '--osc-port':
+      case '-o':
+        if (i + 1 < args.length) {
+          const port = parseInt(args[i + 1]);
+          if (port > 0 && port <= 65535) {
+            oscPort = port;
+            i++; // Skip next argument as it's the value
+          } else {
+            console.error('❌ Error: OSC port must be between 1 and 65535');
+            process.exit(1);
+          }
+        }
+        break;
+      case '--server-port':
+      case '-p':
+        if (i + 1 < args.length) {
+          const port = parseInt(args[i + 1]);
+          if (port > 0 && port <= 65535) {
+            serverPort = port;
+            i++; // Skip next argument as it's the value
+          } else {
+            console.error('❌ Error: Server port must be between 1 and 65535');
+            process.exit(1);
+          }
+        }
+        break;
+      case '--help':
+      case '-h':
+        console.log(`
+🎵 BPM Recording Server
+
+Usage: node server.js [options]
+
+Options:
+  --seats, -s <number>      Number of seats/users (default: 10)
+  --osc-port, -o <number>   OSC listening port (default: 8000)
+  --server-port, -p <number> HTTP server port (default: 3000)
+  --help, -h               Show this help message
+
+Examples:
+  node server.js --seats 20
+  node server.js -s 5 -o 8001 -p 3001
+  node server.js --seats 15 --osc-port 8002
+        `);
+        process.exit(0);
+        break;
+      default:
+        console.error(`❌ Unknown argument: ${args[i]}`);
+        console.log('Use --help or -h for usage information');
+        process.exit(1);
+    }
+  }
+
+  return { numSeats, oscPort, serverPort };
+}
+
+// Get configuration from command line
+const config = parseCommandLineArgs();
+const NUM_SEATS = config.numSeats;
+const OSC_PORT = config.oscPort;
+const SERVER_PORT = config.serverPort;
+
 // Middleware
 app.use(express.static('.'));
 app.use(express.json());
@@ -34,10 +122,69 @@ function loadTemplate(templateName, variables = {}) {
   }
 }
 
+////
+// USER DATA INITIALIZATION
+////
+
+// Initialize user data for all seats
+function initializeUserData() {
+  const userData = {};
+  
+  for (let userId = 1; userId <= NUM_SEATS; userId++) {
+    userData[userId] = {
+      baseline: {      
+        status: Status.SAVED,
+        startTime: null,
+        data: {
+          bpm: [],
+          timestamp: []
+        }
+      },
+      room1: {
+        status: Status.PENDING,
+        startTime: null,
+        data: {
+          bpm: [],
+          timestamp: []
+        }
+      },
+      room2: {
+        status: Status.PENDING,
+        startTime: null,
+        data: {
+          bpm: [],
+          timestamp: []
+        }
+      },
+      room3: {
+        status: Status.PENDING,
+        startTime: null,
+        data: {
+          bpm: [],
+          timestamp: []
+        }
+      },
+      room4: {
+        status: Status.PENDING,
+        startTime: null,
+        data: {
+          bpm: [],
+          timestamp: []
+        }
+      }
+    };
+  }
+  
+  return userData;
+}
 
 ////
 // LOADING FUNCTIONS
 ////
+
+// ICI il fait refaire toute la logique 
+// load les data de user 
+// id max doit pas être en fonction des données existantes et tous les user doivent être initialisés
 
 // Load data from vib-eMotion BPM recording
 function loadBpmDataFromFiles() {
@@ -225,20 +372,8 @@ function deleteUserFile(id, idStatus) {
   }
 }
 
-
 ////
-// BPM DATA LOADING AT STARTUP
-////
-
-const data = loadBpmDataFromFiles();
-const NUM_SEATS = data[0];
-const bpmData = data[1];
-const avgBpm = data[2];
-const landmarks = loadLandmarks(avgBpm.time[0]);
-
-
-////
-// OSC
+// STATUS ENUM
 ////
 
 const Status = Object.freeze({
@@ -247,56 +382,25 @@ const Status = Object.freeze({
   SAVED: "SAVED"
 });
 
-var userData = {};
+////
+// BPM DATA LOADING AT STARTUP
+////
 
-userData[1] = {
-    baseline: {      
-      status: Status.SAVED,
-      startTime: null,
-      data: {
-        bpm: [],
-        timestamp: []
-      }
-    },
-    room1: {
-      status: Status.SAVED,
-      startTime: null,
-      data: {
-        bpm: [],
-        timestamp: []
-      }
-    },
-    room2: {
-      status: Status.PENDING,
-      startTime: null,
-      data: {
-        bpm: [],
-        timestamp: []
-      }
-    },
-    room3: {
-      status: Status.PENDING,
-      startTime: null,
-      data: {
-        bpm: [],
-        timestamp: []
-      }
-    },
-    room4: {
-      status: Status.PENDING,
-      startTime: null,
-      data: {
-        bpm: [],
-        timestamp: []
-      }
-    }
-}
+//const data = loadBpmDataFromFiles();
+//const bpmData = data[1];
+//const landmarks = loadLandmarks(bpmData.time[0]);
 
+// Initialize user data for all configured seats
+var userData = initializeUserData();
 
-// Create an OSC UDP Port on localhost, port 8000
+////
+// OSC
+////
+
+// Create an OSC UDP Port on localhost, configured port
 const udpPort = new osc.UDPPort({
   localAddress: "127.0.0.1", // should be an arg given at app startup
-  localPort: 8000,
+  localPort: OSC_PORT,
   metadata: true
 });
 
@@ -306,6 +410,12 @@ udpPort.on("message", (oscMsg, timeTag, info) => {
   const match = oscMsg.address.match(/^\/oh1\/(\d+)\/bpm$/);
   if (match) {
     const id = parseInt(match[1], 10);
+
+    // Check if user ID is within configured range
+    if (id < 1 || id > NUM_SEATS) {
+      //console.warn(`⚠️  Received OSC message for user ${id}, but only seats 1-${NUM_SEATS} are configured`);
+      return;
+    }
 
     // Check if it is currently in use
     if (userData[id]) {
@@ -361,7 +471,6 @@ udpPort.on("message", (oscMsg, timeTag, info) => {
 
 // Open the connection
 udpPort.open();
-
 
 ////
 // ROUTES 
@@ -709,9 +818,12 @@ app.post('/api/registration/new/:userId', (req, res) => {
 });
 
 // Server startup
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Serveur BPM démarré sur http://0.0.0.0:${PORT}`);
-  console.log(`📱 Accès local: http://localhost:${PORT}`);
-  console.log(`🌐 Accès réseau: http://[IP-DU-MAC]:${PORT}`);
+app.listen(SERVER_PORT, '0.0.0.0', () => {
+  console.log(`🚀 Serveur BPM démarré sur http://0.0.0.0:${SERVER_PORT}`);
+  console.log(`📱 Accès local: http://localhost:${SERVER_PORT}`);
+  console.log(`🌐 Accès réseau: http://[IP-DU-MAC]:${SERVER_PORT}`);
   console.log(`📊 Configuration: ${NUM_SEATS} sièges (identifiants 1 à ${NUM_SEATS})`);
+  console.log(`🎵 OSC listening on port: ${OSC_PORT}`);
+  console.log('');
+  console.log('💡 Use --help or -h for command line options');
 });
