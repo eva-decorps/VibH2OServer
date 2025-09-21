@@ -128,6 +128,7 @@
   <script>
     // Get user id
     const userId = {{userId}};
+    const baselineStatus = "{{baselineStatus}}";
 
     // Set the sensor number (you can customize this logic)
     document.getElementById("sensor-number").textContent = userId;
@@ -178,10 +179,15 @@
         alreadyRegisteredBtn.style.transform = "";
       }, 150);
 
-      // TODO: ici dépend de si on a déjà record la baseline ou pas
       // Navigate to room selection after brief delay
       setTimeout(() => {
-        window.location.href = `/room-selection/${userId}`;
+        if (baselineStatus == "saved") {
+          window.location.href = `/room-selection/${userId}`;
+        } else if (baselineStatus == "recording") {
+          window.location.href = `/room/0/${userId}`
+        } else {
+          window.location.href = `/info-panel/onboarding/${userId}`;
+        }
       }, 200);
     });
 

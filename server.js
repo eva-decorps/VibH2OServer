@@ -188,8 +188,8 @@ function loadBpmDataFromFiles(userData) {
   // Loop through all sensors
   for (let i=1; i<=NUM_SEATS; i++) {
     // Loop through all rooms
-    for (let room=1; room<=4; room++) {
-      var roomKey = `room${room}`;
+    for (let room=0; room<=2; room++) {
+      const roomKey = room >0 ? `room${room}` : 'baseline';
       var filePath = path.join(__dirname, 'user', `${i}`, `stage_${room}.txt`);
 
       if (!fs.existsSync(filePath)) {
@@ -543,9 +543,22 @@ app.get('/auth/:userId', (req, res) => {
     return;
   }
 
+  let baselineStatus;
+  switch (userData[userId].baseline.status) {
+    case Status.PENDING:
+      baselineStatus = "pending";
+      break;
+    case Status.RECORDING:
+      baselineStatus = "recording";
+      break;
+    case Status.SAVED:
+      baselineStatus = "saved";
+  }
+
   // Else redirect toward user registration
   const userRegistrationHtml = loadTemplate('user-registration', {
-    userId: userId
+    userId: userId,
+    baselineStatus: baselineStatus
   });
   
   res.send(userRegistrationHtml);
@@ -598,8 +611,8 @@ app.post('/api/record/start/:userId/:roomId', (req, res) => {
     res.status(404).send(errorHtml);
   }
 
-  // Validate room ID (1-4)
-  if (roomId < 1 || roomId > 4) {
+  // Validate room ID (0-2)
+  if (roomId < 0 || roomId > 2) {
     return res.status(400).json({ 
       success: false, 
       message: 'Invalid room ID' 
@@ -607,7 +620,7 @@ app.post('/api/record/start/:userId/:roomId', (req, res) => {
   }
 
   // Get the room key based on roomId
-  const roomKey = `room${roomId}`;
+  const roomKey = roomId > 0 ? `room${roomId}` : 'baseline';
 
   // Check if room exists in userData
   if (!userData[userId][roomKey]) {
@@ -652,8 +665,8 @@ app.post('/api/record/stop/:userId/:roomId', (req, res) => {
     res.status(404).send(errorHtml);
   }
 
-  // Validate room ID (1-4)
-  if (roomId < 1 || roomId > 4) {
+  // Validate room ID (0-2)
+  if (roomId < 0 || roomId > 2) {
     return res.status(400).json({ 
       success: false, 
       message: 'Invalid room ID' 
@@ -661,7 +674,7 @@ app.post('/api/record/stop/:userId/:roomId', (req, res) => {
   }
 
   // Get the room key based on roomId
-  const roomKey = `room${roomId}`;
+  const roomKey = roomId > 0 ? `room${roomId}` : 'baseline';
 
   // Check if room exists in userData
   if (!userData[userId][roomKey]) {
@@ -699,8 +712,8 @@ app.post('/api/record/cancel/:userId/:roomId', (req, res) => {
     res.status(404).send(errorHtml);
   }
 
-  // Validate room ID (1-4)
-  if (roomId < 1 || roomId > 4) {
+  // Validate room ID (0-2)
+  if (roomId < 0 || roomId > 2) {
     return res.status(400).json({ 
       success: false, 
       message: 'Invalid room ID' 
@@ -708,7 +721,7 @@ app.post('/api/record/cancel/:userId/:roomId', (req, res) => {
   }
 
   // Get the room key based on roomId
-  const roomKey = `room${roomId}`;
+  const roomKey = roomId > 0 ? `room${roomId}` : 'baseline';
 
   // Check if room exists in userData
   if (!userData[userId][roomKey]) {
@@ -748,9 +761,9 @@ app.post('/api/registration/new/:userId', (req, res) => {
     res.status(404).send(errorHtml);
   }
 
-  for (let roomId = 1; roomId <= 4; roomId++) {
+  for (let roomId = 0; roomId <= 2; roomId++) {
     // Get the room key based on roomId
-    const roomKey = `room${roomId}`;
+    const roomKey = roomId > 0 ? `room${roomId}` : 'baseline';
 
     // Set status to PENDING
     userData[userId][roomKey].status = Status.PENDING;
