@@ -270,13 +270,11 @@ function deleteUserFile(id, idStatus) {
 
   if (filePath && fs.existsSync(filePath)) {
     fs.unlinkSync(filePath); // deletes the file
-  } else {
-    console.log("File not found:", filePath);
   }
 }
 
 function stopRecordingInFile(id, idStatus) {
-    const userFolder = path.join(__dirname, "user", String(id));
+  const userFolder = path.join(__dirname, "user", String(id));
 
   let filePath;
   if (idStatus === 0) {
@@ -484,13 +482,25 @@ app.get('/room/:roomId/:userId', (req, res) => {
   const roomKey = `room${roomId}`;
   const roomStatus = userData[userId][roomKey].status;
   const startTime = userData[userId][roomKey].startTime;
+  // Also check if another room is recording
+  var alreadyRecording = false;
+  var roomRecording = null;
+  for (let i=1; i<=4; i++) {
+    let key = `room${i}`
+    if (i!=roomId && userData[userId][key].status == Status.RECORDING) {
+      alreadyRecording = true;
+      roomRecording = i;
+    }
+  }
 
   if (roomStatus== Status.PENDING) {
     const recordHtml = loadTemplate('record', {
       userId: userId,
       roomId: roomId,
       isRecording: false,
-      startTime: startTime
+      startTime: startTime,
+      alreadyRecording: alreadyRecording,
+      roomRecording: roomRecording
     });
 
     res.send(recordHtml);
@@ -499,7 +509,9 @@ app.get('/room/:roomId/:userId', (req, res) => {
       userId: userId,
       roomId: roomId,
       isRecording: true,
-      startTime: startTime
+      startTime: startTime,
+      alreadyRecording: alreadyRecording,
+      roomRecording: roomRecording
     });
 
     res.send(recordHtml);
