@@ -312,7 +312,15 @@
 
     function backToRoomSelection() {
       // Save data and go back to room selection
-      window.location.href = `/room-selection/${userId}`;
+      //window.location.href = `/room-selection/${userId}`;
+      if (roomId == 0) {
+        window.location.href = `/info-panel/post-baseline/${userId}`;
+      } else if (roomId == 1) {
+        window.location.href = `/info-panel/post-karaoke/${userId}`;
+      } else if (roomId == 2) {
+        window.location.href = `/info-panel/post-fresque/${userId}`;
+      }
+      
     }
 
     // Prevent screen sleep during recording (if supported)

@@ -9,14 +9,14 @@
 
 <body>
   <div class="auth-container">
-    <h1>🫀 Emotional Map</h1>
+    <h1>🫀 Carte Émotionnelle</h1>
     
     <div class="info">
-      <strong>Configuration:</strong> {{numSeats}} Valid ids from 1 to {{numSeats}}
+      <strong>Important :</strong> Saisissez le numéro inscrit sur votre capteur pour que l'expérience fonctionne ! <br>
     </div>
 
-    <input type="text" id="userIdInput" placeholder="Id (1 to {{numSeats}})" />
-    <button class="btn-primary" onclick="authenticateUser()">Login</button>
+    <input type="text" id="userIdInput" placeholder="Identifiant (de 1 à {{numSeats}})" />
+    <button class="btn-primary" onclick="authenticateUser()">Se connecter</button>
     <div id="authStatus"></div>
   </div>
 

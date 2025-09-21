@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Emotional Map</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="/shared-styles.css">
+
+  <style>
+    .next-button {
+      padding: 15px 25px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+      color: #333;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+    }
+
+    .next-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+      background: linear-gradient(135deg, #fed6e3 0%, #a8edea 100%);
+    }
+
+    @keyframes slideInUp {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .explanation-text {
+      color: #a0a6c0;
+      font-size: 1.1rem;
+      line-height: 1.6;
+      margin-bottom: 20px;
+    }
+  </style>
+
+</head>
+
+<body>
+
+  <div class="container">
+
+    <h1>🫀 Carte Émotionnelle</h1>
+    <h2> <p class="subtitle"> Oups /p> </h2>
+    
+
+    <div id="explanation" class="explanation">
+      <div class="explanation-text">
+        Oups vous êtes perdu·es ?
+      </div>
+
+      <button id="next-btn" class="next-button">Retour à l'acceuil</button>
+    </div>
+
+  </div>
+
+</body>
+
+<script>
+
+  // Get user id and stage to now what to display and to which page next button redirects
+  const userId = {{userId}};
+  const stage = "{{stage}}";
+
+  const subtitle = document.getElementsByClassName("subtitle")[0];
+  const explanation = document.getElementsByClassName("explanation-text")[0];
+  const nextBtn = document.getElementById("next-btn");
+
+  // Change text depending at what stage we are at
+  if (stage == 'onboarding') {
+
+    subtitle.innerText = `Bienvenu·e !`;
+
+    explanation.innerText = `
+    Le système va suivre votre rythme cardiaque tout au long de votre expérience.
+    Vous pourrez ensuite suivre l'évolution de votre rythme cardiaque.`;
+
+    nextBtn.innerText = 'Suivant'
+
+  } else if (stage == 'baseline') {
+
+    subtitle.innerText = `Enregistrement de la baseline`;
+
+    explanation.innerText = `
+    The first step is to record the baseline.
+    Make yourself confortable to watch the movie and relax. This will take 
+    5 minutes for the result to be scientifically correct. When you are ready press
+    the record button. The recording will stop automatically after 5 minutes and you 
+    will be noticed by a soft ring.`;
+
+    nextBtn.innerText = 'Suivant'
+
+
+  } else if (stage == 'post-baseline') {
+
+    subtitle.innerText = `Enregistrement de la baseline`;
+
+    explanation.innerText = `
+    Ici on explique scientifiquement à quoi ça sert.`;
+
+    nextBtn.innerText = 'Suivant'
+  
+  } else if (stage == 'karaoke') {
+
+    subtitle.innerText = `Enregistrement du Karaoké`;
+
+    explanation.innerText = `
+    wow karaoke is so fun, even funnier with friends !!
+    `;
+
+    nextBtn.innerText = 'Suivant'
+
+  } else if (stage == 'post-karaoke') { 
+
+    subtitle.innerText = `Enregistrement du Karaoké`;
+
+    explanation.innerText = `
+    On explique pourquoi c'est tellement plus fun avec des ami.es
+    `;
+
+    nextBtn.innerText = 'Suivant'
+
+  } else if (stage == 'fresque') {
+
+    subtitle.innerText = `Enregistrement de la fresque`;
+
+    explanation.innerText = `
+    bla bla bla la fresque les exercices`;
+
+    nextBtn.innerText = 'Suivant'
+
+  } else if (stage == 'post-fresque') {
+
+    subtitle.innerText = `Enregistrement de la fresque`;
+
+    explanation.innerText = `
+    explication scientifique fresque`;
+  
+    nextBtn.innerText = 'Suivant'
+
+  } else if (stage == 'result') {
+
+    subtitle.innerText = `Accès aux résultats`;
+
+    explanation.innerText = `
+    We already reached the end of our experiment !
+    You can now access the result, compare it with your friends and let's meet outside !
+    dont forget toi give the sensor back ;)`;
+
+    nextBtn.innerText = 'Suivant'
+  }
+
+  // Next button - redirect to wherever it should depending on step
+  nextBtn.addEventListener("click", (e) => {
+    // Add visual feedback
+    nextBtn.style.transform = "scale(0.95)";
+    setTimeout(() => {
+      nextBtn.style.transform = "";
+    }, 150);
+    // Redirect toward right page
+    setTimeout(() => {
+
+      if (stage == 'onboarding') {
+        window.location.href = `/info-panel/baseline/${userId}`;
+      } else if (stage == 'baseline') {
+        window.location.href = `/room/0/${userId}`;
+      } else if (stage == 'post-baseline') {
+        window.location.href = `/room-selection/${userId}`;
+      } else if (stage == 'karaoke') {
+        window.location.href = `/room/1/${userId}`;
+      } else if (stage == 'post-karaoke') { 
+        window.location.href = `/room-selection/${userId}`;
+      } else if (stage == 'fresque') {
+        window.location.href = `/room/2/${userId}`;
+      } else if (stage == 'post-fresque') {
+        window.location.href = `/room-selection/${userId}`;
+      } else if (stage == 'result') {
+        window.location.href = `/room-selection/${userId}`;
+      } else {
+        window.location.href = '/';
+      }
+
+    }, 200);
+  });
+
+  // Add touch feedback for better mobile experience
+  document.querySelectorAll(".next-button").forEach(btn => {
+    btn.addEventListener("touchstart", () => {
+      btn.style.transform = "translateY(-1px) scale(0.98)";
+    });
+
+    btn.addEventListener("touchend", () => {
+      setTimeout(() => {
+        btn.style.transform = "";
+      }, 100);
+    });
+  });
+
+</script>
+
+</html>

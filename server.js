@@ -133,7 +133,7 @@ function initializeUserData() {
   for (let userId = 1; userId <= NUM_SEATS; userId++) {
     userData[userId] = {
       baseline: {      
-        status: Status.SAVED,
+        status: Status.PENDING,
         startTime: null,
         data: {
           bpm: [],
@@ -456,8 +456,11 @@ app.get('/room-selection/:userId', (req, res) => {
     return;
   }
 
+  // To now if we need to display the info panel
   const roomSelectionHtml = loadTemplate('room-selection', {
-    userId: userId
+    userId: userId,
+    showRoom1Info: (userData[userId].room1.status == Status.PENDING),
+    showRoom2Info: (userData[userId].room2.status == Status.PENDING)
   });
 
   res.send(roomSelectionHtml);
@@ -479,7 +482,7 @@ app.get('/room/:roomId/:userId', (req, res) => {
   }
 
   // If user exist check room status and start time
-  const roomKey = `room${roomId}`;
+  const roomKey = roomId >0 ? `room${roomId}` : 'baseline';
   const roomStatus = userData[userId][roomKey].status;
   const startTime = userData[userId][roomKey].startTime;
   // Also check if another room is recording
@@ -546,6 +549,18 @@ app.get('/auth/:userId', (req, res) => {
   });
   
   res.send(userRegistrationHtml);
+});
+
+// Info panel
+app.get('/info-panel/:stage/:userId', (req, res) => {
+  let { stage, userId } = req.params;
+
+  const infoPanelHtml = loadTemplate('info-panel', {
+    userId: userId,
+    stage: stage
+  });
+
+  res.send(infoPanelHtml);
 });
 
 // Error authenticating

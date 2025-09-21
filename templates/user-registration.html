@@ -85,50 +85,6 @@
       }
     }
 
-    /* Explanation section */
-    .explanation {
-      margin-top: 20px;
-      padding: 20px;
-      background: rgba(255, 255, 255, 0.08);
-      border-radius: 12px;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      display: none;
-      opacity: 0;
-      transform: translateY(10px);
-      transition: all 0.3s ease;
-    }
-
-    .explanation.show {
-      display: block;
-      opacity: 1;
-      transform: translateY(0);
-    }
-
-    .explanation-text {
-      color: #a0a6c0;
-      font-size: 1.1rem;
-      line-height: 1.6;
-      margin-bottom: 20px;
-    }
-
-    .next-button {
-      padding: 15px 25px;
-      font-size: 1.1rem;
-      font-weight: bold;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
-      color: #333;
-      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
-    }
-
-    .next-button:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-      background: linear-gradient(135deg, #fed6e3 0%, #a8edea 100%);
-    }
 
     /* Mobile optimizations */
     @media (max-width: 480px) {
@@ -147,20 +103,6 @@
         gap: 15px;
         margin-top: 20px;
       }
-
-      .explanation {
-        padding: 15px;
-        margin-top: 15px;
-      }
-
-      .explanation-text {
-        font-size: 1rem;
-      }
-
-      .next-button {
-        padding: 12px 20px;
-        font-size: 1rem;
-      }
     }
 
   </style>
@@ -168,26 +110,23 @@
 
 <body>
   <div class="container">
-    <h1>🫀 Emotional Map</h1>
-    <p class="subtitle">You are registered with sensor number <strong id="sensor-number">001</strong></p>
+    <h1>🫀 Carte Émotionnelle</h1>
+    <p class="subtitle"> 
+      Vous êtes authentifié·e avec le capteur numéro <strong id="sensor-number">001</strong>. <br>
+      Vérifiez que cela correspond bien au numéro inscrit sur votre capteur. <br>
+      <br>
+      Si vous vous êtes déjà connecté·e cliquez sur Reprendre l'expérience. Vous serez redirigé·e là où vous vous êtes arrété·e.
+    </p>
 
     <div class="button-list">
-      <button id="first-connection-btn" class="nav-button first-connection">First Connection</button>
-      <button id="already-registered-btn" class="nav-button already-registered">Already Registered</button>
+      <button id="first-connection-btn" class="nav-button first-connection">Première connexion</button>
+      <button id="already-registered-btn" class="nav-button already-registered">Reprendre l'expérience</button>
     </div>
 
-    <div id="explanation" class="explanation">
-      <div class="explanation-text">
-        Welcome to your first connection! This system monitors your heart rate (BPM) data across different rooms. 
-        Each room represents a different environment where your emotional and physiological responses are tracked. 
-        You'll be able to view your BPM data and see how it changes in different spaces.
-      </div>
-      <button id="next-btn" class="next-button">Next</button>
-    </div>
   </div>
 
   <script>
-    // Get user id from URL (similar to room-selection page)
+    // Get user id
     const userId = {{userId}};
 
     // Set the sensor number (you can customize this logic)
@@ -216,17 +155,19 @@
       })
       .then(response => response.json())
       .then(data => {
-          if (data.success) {
-            // Hide buttons and show explanation
-            buttonList.style.display = 'none';
-            explanation.classList.add("show");
-          } else {
-            console.error('Failed to reset data for user:', data.message);
-          }
+        if (data.success) {
+          // Hide buttons and show explanation
+          setTimeout(() => {
+            window.location.href = `/info-panel/onboarding/${userId}`;
+          }, 200);
+        } else {
+          console.error('Failed to reset data for user:', data.message);
+        }
       })
       .catch(error => {
         console.error('Error calling new registration API:', error);
       });
+
     });
 
     // Already Registered button - redirect to room selection
@@ -237,20 +178,7 @@
         alreadyRegisteredBtn.style.transform = "";
       }, 150);
 
-      // Navigate to room selection after brief delay
-      setTimeout(() => {
-        window.location.href = `/room-selection/${userId}`;
-      }, 200);
-    });
-
-    // Next button - redirect to room selection
-    nextBtn.addEventListener("click", (e) => {
-      // Add visual feedback
-      nextBtn.style.transform = "scale(0.95)";
-      setTimeout(() => {
-        nextBtn.style.transform = "";
-      }, 150);
-
+      // TODO: ici dépend de si on a déjà record la baseline ou pas
       // Navigate to room selection after brief delay
       setTimeout(() => {
         window.location.href = `/room-selection/${userId}`;

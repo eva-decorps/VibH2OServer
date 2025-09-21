@@ -59,16 +59,6 @@
     .room-2 { 
       background: linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%); 
     }
-    
-    .room-3 { 
-      background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); 
-      color: #333; 
-    }
-    
-    .room-4 { 
-      background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); 
-      color: #333; 
-    }
 
     /* Hover effects */
     .room-1:hover { 
@@ -77,14 +67,6 @@
     
     .room-2:hover { 
       background: linear-gradient(135deg, #44a08d 0%, #4ecdc4 100%); 
-    }
-    
-    .room-3:hover { 
-      background: linear-gradient(135deg, #fed6e3 0%, #a8edea 100%); 
-    }
-    
-    .room-4:hover { 
-      background: linear-gradient(135deg, #fcb69f 0%, #ffecd2 100%); 
     }
 
     /* Add subtle animation on load */
@@ -96,8 +78,6 @@
 
     .room-button:nth-child(1) { animation-delay: 0.1s; }
     .room-button:nth-child(2) { animation-delay: 0.2s; }
-    .room-button:nth-child(3) { animation-delay: 0.3s; }
-    .room-button:nth-child(4) { animation-delay: 0.4s; }
 
     @keyframes slideInUp {
       to {
@@ -130,21 +110,20 @@
 
 <body>
   <div class="container">
-    <h1>🫀 Emotional Map</h1>
-    <p class="subtitle">Select a room to view the BPM data</p>
+    <h1>🫀 Carte Émotionnelle</h1>
+    <p class="subtitle">Sélectionnez une installation pour enregistrer ou visualiser vos données.</p>
 
     <div class="room-list">
-      <button data-room="1" class="room-button room-1">Room 1</button>
-      <button data-room="2" class="room-button room-2">Room 2</button>
-      <button data-room="3" class="room-button room-3">Room 3</button>
-      <button data-room="4" class="room-button room-4">Room 4</button>
+      <button data-room="1" class="room-button room-1">Karaoke</button>
+      <button data-room="2" class="room-button room-2">Fresque</button>
     </div>
   </div>
 
   <script>
     // Get user id from URL
-    const pathParts = window.location.pathname.split("/");
-    const userId = pathParts[2];
+    const userId = {{userId}};
+    const showInfoRoom1 = {{showRoom1Info}};
+    const showInfoRoom2 = {{showRoom2Info}};
 
     // Add click listeners to all room buttons
     document.querySelectorAll(".room-button").forEach(btn => {
@@ -158,7 +137,15 @@
         // Navigate to room after brief delay for visual feedback
         setTimeout(() => {
           const roomId = btn.getAttribute("data-room");
-          window.location.href = `/room/${roomId}/${userId}`;
+
+          if (roomId == 1 && showInfoRoom1) {
+            window.location.href = `/info-panel/karaoke/${userId}`;
+          } else if (roomId == 2 && showInfoRoom2) {
+            window.location.href = `/info-panel/fresque/${userId}`;
+          } else {
+             window.location.href = `/room/${roomId}/${userId}`;
+          }
+
         }, 200);
       });
     });
