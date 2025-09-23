@@ -44,7 +44,7 @@ body {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 20px;
+  gap: 0px;
 }
 
 /* Override for room selection to allow natural height */
@@ -56,10 +56,15 @@ body {
 /* Common heading styles */
 h1 {
   text-align: center;
-  margin-bottom: 30px;
+  margin-bottom: 0px;
   color: #e0e6f0;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
   margin-top: 0;
+}
+
+h2 {
+  margin-top: 0;
+  margin-bottom: 0px;
 }
 
 /* Common button styles */
