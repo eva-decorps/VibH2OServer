@@ -206,13 +206,18 @@
 
   <script>
 
-    // Get user id, room id and recording state
+    // Get user id, room id
     const roomId = {{roomId}};
     const userId = {{userId}};
+    // Different button if recording not started yet or already finished
+    let recordingFinished = false;
     let isRecording = {{isRecording}};
+    // Tmer
     let startTime = {{startTime}};
     let timerInterval = null;
-    let recordingFinished = false;
+    // Prevent simultaneous recording
+    const alreadyRecording = {{alreadyRecording}};
+    const roomRecording = {{roomRecording}};
     // Prevent screen sleep during recording (if supported)
     let wakeLock = null;
 
@@ -251,6 +256,25 @@
         } 
 
         startTimer();
+      } else if (alreadyRecording) 
+      {
+        // Only button back to room recording
+        nextButton.style.display = 'block';
+        nextButton.textContent = `Retour à l'enregistrement`;
+        cancelButton.style.display = 'none';
+        recordButton.style.display = 'none';
+
+        if (roomRecording == 0) {
+          statusText.textContent =  `Oups, la baseline est déjà en cours d'enregistrement ! 
+          Retournez sur la baseline pour stopper ou annuler l'enregistrement.`;
+        } else if (roomRecording == 1) {
+          statusText.textContent =  `Oups, le karaoké est déjà en cours d'enregistrement ! 
+          Retournez sur le karaoké pour stopper ou annuler l'enregistrement.`;
+        } else if (roomRecording == 2) {
+          statusText.textContent =  `Oups, la fresque est déjà en cours d'enregistrement ! 
+          Retournez sur la fresque pour stopper ou annuler l'enregistrement.`;
+        }
+
       } else
       {
         // Init timer and button
@@ -422,13 +446,15 @@
     }
 
     function nextStep() {
-      
-      if (!recordingFinished) {
-        // If before recording go back to room selection
-        window.location.href = `/room-selection/${userId}`;
 
-      } else {
-        // Otherwise go to next step
+      if (alreadyRecording) 
+      {
+        // Go back to the room currently recording
+        window.location.href = `/room/${roomRecording}/${userId}`;
+
+      } else if (recordingFinished) 
+      {
+        // Go to next step
         if (roomId == 0) {
           window.location.href = `/info-panel/post-baseline/${userId}`;
         } else if (roomId == 1) {
@@ -436,6 +462,11 @@
         } else if (roomId == 2) {
           window.location.href = `/info-panel/post-fresque/${userId}`;
         }  
+
+      } else 
+      {
+        // If before recording go back to room selection
+        window.location.href = `/room-selection/${userId}`;
       }
 
     }
