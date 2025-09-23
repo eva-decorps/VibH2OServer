@@ -5,9 +5,10 @@
   <title>Recording - Emotional Map</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="/shared-styles.css">
-  
+
   <style>
-    html, body {
+    html,
+    body {
       height: 100vh;
     }
 
@@ -70,9 +71,15 @@
     }
 
     @keyframes pulse {
-      0% { box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3), 0 0 0 0 rgba(255, 107, 107, 0.7); }
-      50% { box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3), 0 0 0 20px rgba(255, 107, 107, 0); }
-      100% { box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3), 0 0 0 0 rgba(255, 107, 107, 0); }
+      0% {
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3), 0 0 0 0 rgba(255, 107, 107, 0.7);
+      }
+      50% {
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3), 0 0 0 20px rgba(255, 107, 107, 0);
+      }
+      100% {
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3), 0 0 0 0 rgba(255, 107, 107, 0);
+      }
     }
 
     .control-buttons {
@@ -116,11 +123,11 @@
       background: linear-gradient(135deg, #e67e22 0%, #f39c12 100%);
     }
 
-    .back-button {
+    .next-button {
       background: linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%);
     }
 
-    .back-button:hover {
+    .next-button:hover {
       background: linear-gradient(135deg, #44a08d 0%, #4ecdc4 100%);
     }
 
@@ -137,33 +144,38 @@
     }
 
     @keyframes blink {
-      0%, 50% { opacity: 1; }
-      51%, 100% { opacity: 0.3; }
+      0%,
+      50% {
+        opacity: 1;
+      }
+      51%,
+      100% {
+        opacity: 0.3;
+      }
     }
 
-    @media (max-width: 480px) {      
+    @media (max-width: 480px) {
       .timer-display {
         font-size: 2.5rem;
         margin: 20px 0;
       }
-      
+
       .record-button {
         width: 100px;
         height: 100px;
         font-size: 1rem;
       }
-      
+
       .action-button {
         padding: 12px 25px;
         font-size: 1rem;
         min-height: 45px;
       }
-      
+
       .status-text {
         font-size: 1.1rem;
       }
     }
-
   </style>
 </head>
 
@@ -182,11 +194,11 @@
       </button>
 
       <div class="control-buttons" id="controlButtons">
-        <button class="action-button cancel-button" onclick="cancelRecording()">
-          Cancel
+        <button class="action-button cancel-button" id="cancel-button" onclick="cancelRecording()">
+          Annuler
         </button>
-        <button class="action-button back-button" onclick="backToRoomSelection()">
-          Save
+        <button class="action-button next-button" id="next-button" onclick="nextStep()">
+          Enregistrer
         </button>
       </div>
     </div>
@@ -200,103 +212,202 @@
     let isRecording = {{isRecording}};
     let startTime = {{startTime}};
     let timerInterval = null;
+    let recordingFinished = false;
+    // Prevent screen sleep during recording (if supported)
+    let wakeLock = null;
 
-    // Init recording state
-    if (isRecording) {
-        const recordButton = document.getElementById('recordButton');
-        const buttonText = document.getElementById('buttonText');
-        const statusText = document.getElementById('statusText');
-        const recordingIndicator = document.getElementById('recordingIndicator');
+    // Mettre une fonction init ici : 
+    function init() {
 
+      const recordButton = document.getElementById('recordButton');
+      const buttonText = document.getElementById('buttonText');
+      const recordingIndicator = document.getElementById('recordingIndicator');
+      const timerDisplay = document.getElementById('timerDisplay');
+
+      const statusText = document.getElementById('statusText');
+      const nextButton = document.getElementById('next-button');
+      const cancelButton = document.getElementById('cancel-button');
+      const controlButtons = document.getElementById('controlButtons');
+
+      controlButtons.classList.add('show');
+
+      // Init recording state
+      if (isRecording)
+      {
+        // Retrieve recording timer
         recordButton.className = 'record-button stop';
         buttonText.textContent = 'STOP';
-        statusText.textContent = `Recording in progress for room ${roomId}...`;
         recordingIndicator.classList.add('show');
-        
+
+        if (roomId == 0) {
+          statusText.textContent = `Enregistrement de la baseline en cour...
+          Appuyez sur stop uen fois les 5 minutes passées.`;
+        } else if (roomId == 1) {
+          statusText.textContent = `Enregistrement du karaoké en cours...
+          Appuyez sur stop une fois le karaoké terminé.`;
+        } else if (roomId == 2) {
+          statusText.textContent = `Enregistrement de la fresque en cours... 
+          Appuyez sur stop une fois l'activité terminée.`;
+        } 
+
         startTimer();
-    }
-    
-    // Initialize the status text with room number
-    function initializeStatusText() {
-      const statusText = document.getElementById('statusText');
-      statusText.textContent = `Ready to record for room ${roomId}`;
+      } else
+      {
+        // Init timer and button
+        recordButton.style.display = 'flex';
+        recordButton.className = 'record-button record';
+        buttonText.textContent = 'RECORD';
+        recordingIndicator.classList.remove('show');
+        timerDisplay.textContent = '00:00';
+
+        cancelButton.style.display = 'none';
+        
+        if (roomId == 0) {
+          statusText.textContent = `Prêt·e pour l'enregistrement de la baseline ? 
+          Appuyer sur le bouton record et arrêtez après 5 minutes au moins.`;
+          nextButton.style.display = 'none';
+        } else if (roomId == 1) {
+          statusText.textContent = `Prêt·e pour l'enregistrement du karaoke ? 
+          Appuyer sur le bouton record et arrêtez quand vous sortez du karaoke.`;
+          nextButton.textContent = `Retour à la sélection`;
+          nextButton.style.display = 'block';
+        } else if (roomId == 2) {
+          statusText.textContent = `Prêt·e pour l'enregistrement de la fresque ? 
+          Appuyer sur le bouton record et arrêtez quand vous avez fini l'activité.`;
+          nextButton.textContent = `Retour à la sélection`;
+          nextButton.style.display = 'block';
+        }
+      }
     }
 
     function toggleRecording() {
+
       const recordButton = document.getElementById('recordButton');
       const buttonText = document.getElementById('buttonText');
       const statusText = document.getElementById('statusText');
       const recordingIndicator = document.getElementById('recordingIndicator');
       const controlButtons = document.getElementById('controlButtons');
+
+      const nextButton = document.getElementById('next-button');
+      const cancelButton = document.getElementById('cancel-button');
 
       if (!isRecording) {
         // Start recording
         isRecording = true;
         startTime = Date.now();
-        
+
         recordButton.className = 'record-button stop';
-        buttonText.textContent = 'STOP';
-        statusText.textContent = `Recording in progress for room ${roomId}...`;
         recordingIndicator.classList.add('show');
-        
+        if (roomId > 0) buttonText.textContent = 'STOP';
+        else buttonText.textContent = '';
+
+        if (roomId == 0) {
+          statusText.textContent = `Enregistrement de la baseline en cour...
+          Appuyez sur stop uen fois les 5 minutes passées.`;
+        } else if (roomId == 1) {
+          statusText.textContent = `Enregistrement du karaoké en cours...
+          Appuyez sur stop une fois le karaoké terminé.`;
+        } else if (roomId == 2) {
+          statusText.textContent = `Enregistrement de la fresque en cours... 
+          Appuyez sur stop une fois l'activité terminée.`;
+        } 
+
+        // Allow to cancel but not to go back to selection or go to next step
+        nextButton.style.display = 'none';
+        cancelButton.style.display = 'block';
+        cancelButton.classList.add('show');
+
         startTimer();
-      } else {
-        // Stop recording
-        isRecording = false;
-        
-        recordButton.style.display = 'none';
-        statusText.textContent = `Recording completed for room ${roomId}`;
-        recordingIndicator.classList.remove('show');
-        controlButtons.classList.add('show');
-        
-        stopTimer();
-      }
-    }
+        releaseWakeLock();
 
-    function startTimer() {
-      timerInterval = setInterval(() => {
-        const elapsed = Date.now() - startTime;
-        const minutes = Math.floor(elapsed / 60000);
-        const seconds = Math.floor((elapsed % 60000) / 1000);
-        
-        document.getElementById('timerDisplay').textContent = 
-          `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-      }, 1000);
-    }
-
-    function stopTimer() {
-      if (timerInterval) {
-        clearInterval(timerInterval);
-        timerInterval = null;
-      }
-    }
-
-    function cancelRecording() {
-      // Reset to initial state
-      isRecording = false;
-      startTime = null;
-      
-      const recordButton = document.getElementById('recordButton');
-      const buttonText = document.getElementById('buttonText');
-      const statusText = document.getElementById('statusText');
-      const recordingIndicator = document.getElementById('recordingIndicator');
-      const controlButtons = document.getElementById('controlButtons');
-      const timerDisplay = document.getElementById('timerDisplay');
-      
-      recordButton.style.display = 'flex';
-      recordButton.className = 'record-button record';
-      buttonText.textContent = 'RECORD';
-      statusText.textContent = `Ready to record for room ${roomId}`;
-      recordingIndicator.classList.remove('show');
-      controlButtons.classList.remove('show');
-      timerDisplay.textContent = '00:00';
-
-      fetch(`/api/record/cancel/${userId}/${roomId}`, {
+        fetch(`/api/record/start/${userId}/${roomId}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           }
         })
+        .then(response => response.json())
+        .then(data => {
+          if (!data.success) {
+            console.error('Failed to start recording:', data.message);
+          }
+        })
+        .catch(error => {
+          console.error('Error calling start recording API:', error);
+        });
+          
+      } else {
+
+        // Check the minimun time interval has been reached
+        const elapsedMin = (Date.now() - startTime) / 60000;
+        if (roomId == 0 && elapsedMin < 5) 
+        {
+          statusText.textContent = `Enregistrement de la baseline en cour...
+          Encore un peu de patience ! Vous ne pourrez arreter qu'une fois les 5 minutes passées.`;
+
+        } else 
+        {
+          // Stop recording
+          isRecording = false;
+          recordingFinished = true;
+
+          recordButton.style.display = 'none';
+          recordingIndicator.classList.remove('show');
+
+          if (roomId == 0) {
+            statusText.textContent = `Enregistrez la baseline pour aller à l'étape suivante !`;
+          } else if (roomId == 1) {
+            statusText.textContent = `Enregistrez le karaoké pour aller à l'étape suivante !`;
+          } else if (roomId == 2) {
+            statusText.textContent = `Enregistrez la fresque pour aller à l'étape suivante !`;
+          } 
+
+          // Allow both to go to next setp or cancel
+          cancelButton.classList.add('show');
+          cancelButton.style.display = 'block';
+
+          nextButton.classList.add('show');
+          nextButton.style.display = 'block';
+          nextButton.innerText = 'Enregistrer';
+
+          stopTimer();
+          requestWakeLock();
+
+          // Call the POST API to stop recording
+          fetch(`/api/record/stop/${userId}/${roomId}`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            }
+          })
+          .then(response => response.json())
+          .then(data => {
+            if (!data.success) {
+              console.error('Failed to stop recording:', data.message);
+            }
+          })
+          .catch(error => {
+            console.error('Error calling stop recording API:', error);
+          });
+
+        }
+      }
+    }
+
+    function cancelRecording() {
+      
+      // Reset to initial state
+      isRecording = false;
+      startTime = null;
+      recordingFinished = false;
+      init();
+
+      fetch(`/api/record/cancel/${userId}/${roomId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      })
         .then(response => response.json())
         .then(data => {
           if (data.success) {
@@ -310,21 +421,46 @@
         });
     }
 
-    function backToRoomSelection() {
-      // Save data and go back to room selection
-      //window.location.href = `/room-selection/${userId}`;
-      if (roomId == 0) {
-        window.location.href = `/info-panel/post-baseline/${userId}`;
-      } else if (roomId == 1) {
-        window.location.href = `/info-panel/post-karaoke/${userId}`;
-      } else if (roomId == 2) {
-        window.location.href = `/info-panel/post-fresque/${userId}`;
-      }
+    function nextStep() {
       
+      if (!recordingFinished) {
+        // If before recording go back to room selection
+        window.location.href = `/room-selection/${userId}`;
+
+      } else {
+        // Otherwise go to next step
+        if (roomId == 0) {
+          window.location.href = `/info-panel/post-baseline/${userId}`;
+        } else if (roomId == 1) {
+          window.location.href = `/info-panel/post-karaoke/${userId}`;
+        } else if (roomId == 2) {
+          window.location.href = `/info-panel/post-fresque/${userId}`;
+        }  
+      }
+
     }
 
-    // Prevent screen sleep during recording (if supported)
-    let wakeLock = null;
+    // Timer
+    function startTimer() {
+      timerInterval = setInterval(() => {
+        const elapsed = Date.now() - startTime;
+        const minutes = Math.floor(elapsed / 60000);
+        const seconds = Math.floor((elapsed % 60000) / 1000);
+
+        if (minutes > 5) buttonText.textContent = 'STOP';
+
+        document.getElementById('timerDisplay').textContent =
+          `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+      }, 1000);
+    }
+
+    function stopTimer() {
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+    }
 
     async function requestWakeLock() {
       try {
@@ -343,60 +479,10 @@
       }
     }
 
-    // Request wake lock when recording starts
-    document.getElementById('recordButton').addEventListener('click', () => {
-      if (!isRecording) {
-        // Call the POST API to stop recording
-        fetch(`/api/record/stop/${userId}/${roomId}`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          }
-        })
-        .then(response => response.json())
-        .then(data => {
-          if (data.success) {
-            requestWakeLock();
-          } else {
-            console.error('Failed to stop recording:', data.message);
-          }
-        })
-        .catch(error => {
-          console.error('Error calling stop recording API:', error);
-        });
-
-      } else {
-        // Call the POST API to start recording
-        fetch(`/api/record/start/${userId}/${roomId}`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          }
-        })
-        .then(response => response.json())
-        .then(data => {
-          if (data.success) {
-            releaseWakeLock();
-          } else {
-            console.error('Failed to start recording:', data.message);
-          }
-        })
-        .catch(error => {
-          console.error('Error calling start recording API:', error);
-        });
-      }
-    });
-
-    // Clean up wake lock when page is hidden
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'hidden' && wakeLock) {
-        //releaseWakeLock();
-      }
-    });
-
     // Initialize the page with room-specific status text
-    document.addEventListener('DOMContentLoaded', initializeStatusText);
+    document.addEventListener('DOMContentLoaded', init);
 
   </script>
 </body>
+
 </html>
