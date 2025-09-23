@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="/shared-styles.css">
 
   <style>
-    .next-button {
+    .next-button, .back-button {
       padding: 15px 25px;
       font-size: 1.1rem;
       font-weight: bold;
@@ -20,7 +20,18 @@
       box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
     }
 
-    .next-button:hover {
+    .back-button {
+      display: 'none';
+    }
+
+    .button-group {
+      display: flex;
+      flex-direction: column;   /* stack vertically */
+      align-items: center;      /* center horizontally */
+      gap: 15px;                /* spacing between buttons */
+    }
+
+    .next-button:hover, .back-button:hover {
       transform: translateY(-2px);
       box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
       background: linear-gradient(135deg, #fed6e3 0%, #a8edea 100%);
@@ -58,7 +69,11 @@
         Oups vous êtes perdu·es ?
       </div>
 
+    <div class="button-group">
       <button id="next-btn" class="next-button">Retour à l'acceuil</button>
+      <button id="back-btn" class="back-button">Retour à l'acceuil</button>
+    </div>
+
     </div>
 
   </div>
@@ -74,6 +89,7 @@
   const subtitle = document.getElementsByClassName("subtitle")[0];
   const explanation = document.getElementsByClassName("explanation-text")[0];
   const nextBtn = document.getElementById("next-btn");
+  const backBtn = document.getElementById("back-btn");
 
   // Change text depending at what stage we are at
   if (stage == 'onboarding') {
@@ -160,6 +176,16 @@
     dont forget toi give the sensor back ;)`;
 
     nextBtn.innerText = 'Suivant'
+
+  } else if (stage == 'exit') {
+
+    subtitle.innerText = `Finir l'expérience`;
+
+    explanation.innerText = `
+    Êtes vous sûr·e de vouloir partir ? Vous ne pourrez plus visualizer vos résultats après ça.`;
+
+    nextBtn.innerText = 'Terminer';
+    backBtn.style.display = 'block'; ;
   }
 
   // Next button - redirect to wherever it should depending on step
@@ -188,10 +214,24 @@
         window.location.href = `/room-selection/${userId}`;
       } else if (stage == 'result') {
         window.location.href = `/room-selection/${userId}`;
+      } else if(stage == 'exit') {
+        window.location.href = '/';
       } else {
         window.location.href = '/';
       }
 
+    }, 200);
+  });
+
+  backBtn.addEventListener("click", (e) => {
+    // Add visual feedback
+    nextBtn.style.transform = "scale(0.95)";
+    setTimeout(() => {
+      nextBtn.style.transform = "";
+    }, 150);
+    // Redirect toward right page
+    setTimeout(() => {
+      window.location.href = `/room-selection/${userId}`;
     }, 200);
   });
 
