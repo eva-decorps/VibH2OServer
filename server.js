@@ -340,7 +340,6 @@ udpPort.on("message", (oscMsg, timeTag, info) => {
 
     // Check if user ID is within configured range
     if (id < 1 || id > NUM_SEATS) {
-      //console.warn(`⚠️  Received OSC message for user ${id}, but only seats 1-${NUM_SEATS} are configured`);
       return;
     }
 
@@ -353,52 +352,55 @@ udpPort.on("message", (oscMsg, timeTag, info) => {
       
       var idStatus = -1;
       var roomKey = 'baseline';
-      for (let roomId=0; roomId<=4; roomId++) {
+      for (let roomId=0; roomId<=4; roomId++) 
+      {
         if (roomId>0) roomKey = `room${roomId}`;
-        if (userData[id][roomKey].status == Status.RECORDING) {
+
+        if (userData[id][roomKey].status == Status.RECORDING) 
+        {
+          let line = `${bpm}, ${timestamp};\n`;
+
           idStatus = roomId;
           userData[id][roomKey].data.bpm.push(bpm);
           userData[id][roomKey].data.timestamp.push(timestamp);
 
-/*           // Auto stop baseline after 5 min
+          // Auto stop after 10'10" if wasn't stopped before
           const elapsedTime = (timestamp - userData[id][roomKey].data.timestamp[0]) / 1000;
-          if (roomId == 0 && elapsedTime > 30) {
+          if (elapsedTime > 610) {
             // Set status to SAVED
-            userData[userId][roomKey].status = Status.SAVED;
-            userData[userId][roomKey].startTime = null;
-
-            // Write stop in file to be sure it finished recording
-            stopRecordingInFile(userId, roomId);
-          } */
-        }
-      }
-
-      // Also store it in case of a server crash
-      // Build folder path
-      const userFolder = path.join(__dirname, "user", String(id));
-      // Ensure folder exists
-      if (!fs.existsSync(userFolder)) {
-        fs.mkdirSync(userFolder, { recursive: true });
-      }
-      
-      // Filepath depends on stage
-      let filePath;
-      if (idStatus === 0) {
-        filePath = path.join(userFolder, "baseline.txt");
-      } else if (idStatus > 0 && idStatus < 5) {
-        filePath = path.join(userFolder, `stage_${idStatus}.txt`);
-      }
-
-      if (filePath) {
-        const line = `${bpm}, ${timestamp};\n`;
-
-        // Append or create file
-        fs.appendFile(filePath, line, (err) => {
-          if (err) {
-            console.error("Error writing to file:", err);
+            userData[id][roomKey].status = Status.SAVED;
+            userData[id][roomKey].startTime = null;
+            // Write stop in file
+            line = `stop;\n`;
           }
-        });
 
+          // Also store it in case of a server crash
+          // Build folder path
+          const userFolder = path.join(__dirname, "user", String(id));
+          // Ensure folder exists
+          if (!fs.existsSync(userFolder)) {
+            fs.mkdirSync(userFolder, { recursive: true });
+          }
+          
+          // Filepath depends on stage
+          let filePath;
+          if (idStatus === 0) {
+            filePath = path.join(userFolder, "baseline.txt");
+          } else if (idStatus > 0 && idStatus < 5) {
+            filePath = path.join(userFolder, `stage_${idStatus}.txt`);
+          }
+
+          if (filePath) {
+            // Append or create file
+            fs.appendFile(filePath, line, (err) => {
+              if (err) {
+                console.error("Error writing to file:", err);
+              }
+            });
+
+          }
+
+        }
       }
 
     }
