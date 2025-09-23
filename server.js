@@ -1,10 +1,17 @@
 // Simple Node.js server to display BPM chart
 const express = require('express');
 const fs = require('fs');
+const https = require('https');
 const path = require('path');
 const osc = require('osc');
 const app = express();
 const PORT = 3000;
+
+// Create self-signed certificate (for development)
+const options = {
+  key: fs.readFileSync('key.pem'),
+  cert: fs.readFileSync('cert.pem')
+};
 
 ////
 // PARSE ARGUMENTS
@@ -352,6 +359,17 @@ udpPort.on("message", (oscMsg, timeTag, info) => {
           idStatus = roomId;
           userData[id][roomKey].data.bpm.push(bpm);
           userData[id][roomKey].data.timestamp.push(timestamp);
+
+/*           // Auto stop baseline after 5 min
+          const elapsedTime = (timestamp - userData[id][roomKey].data.timestamp[0]) / 1000;
+          if (roomId == 0 && elapsedTime > 30) {
+            // Set status to SAVED
+            userData[userId][roomKey].status = Status.SAVED;
+            userData[userId][roomKey].startTime = null;
+
+            // Write stop in file to be sure it finished recording
+            stopRecordingInFile(userId, roomId);
+          } */
         }
       }
 
@@ -782,11 +800,16 @@ app.post('/api/registration/new/:userId', (req, res) => {
   });
 });
 
+
+https.createServer(options, app).listen(3000, () => {
+  console.log('HTTPS Server running on port 3000');
+});
+
 // Server startup
 app.listen(SERVER_PORT, '0.0.0.0', () => {
-  console.log(`🚀 Serveur BPM démarré sur http://0.0.0.0:${SERVER_PORT}`);
-  console.log(`📱 Accès local: http://localhost:${SERVER_PORT}`);
-  console.log(`🌐 Accès réseau: http://[IP-DU-MAC]:${SERVER_PORT}`);
+  console.log(`🚀 Serveur BPM démarré sur https://0.0.0.0:${SERVER_PORT}`);
+  console.log(`📱 Accès local: https://localhost:${SERVER_PORT}`);
+  console.log(`🌐 Accès réseau: https://[IP-DU-MAC]:${SERVER_PORT}`);
   console.log(`📊 Configuration: ${NUM_SEATS} sièges (identifiants 1 à ${NUM_SEATS})`);
   console.log(`🎵 OSC listening on port: ${OSC_PORT}`);
   console.log('');

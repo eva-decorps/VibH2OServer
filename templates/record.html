@@ -222,6 +222,8 @@
     let wakeLock = null;
     // Beeper
     const beepSound = new Audio('/ressources/beep-recording-end.mp3');
+    let audioEnabled = false;
+    let audioContext;
 
     // Mettre une fonction init ici : 
     function init() {
@@ -247,8 +249,8 @@
         recordingIndicator.classList.add('show');
 
         if (roomId == 0) {
-          statusText.textContent = `Enregistrement de la baseline en cour...
-          Appuyez sur stop uen fois les 5 minutes passées.`;
+          statusText.textContent = `Enregistrement de la baseline en cours...
+          Appuyez sur stop une fois les 5 minutes passées.`;
         } else if (roomId == 1) {
           statusText.textContent = `Enregistrement du karaoké en cours...
           Appuyez sur stop une fois le karaoké terminé.`;
@@ -308,6 +310,13 @@
 
     function toggleRecording() {
 
+      // Makes sure audio is enabled
+      if (!audioEnabled) {
+        enableAudioAndVibration();
+      } else {
+        alertUser();
+      }
+
       const recordButton = document.getElementById('recordButton');
       const buttonText = document.getElementById('buttonText');
       const statusText = document.getElementById('statusText');
@@ -328,8 +337,8 @@
         else buttonText.textContent = '';
 
         if (roomId == 0) {
-          statusText.textContent = `Enregistrement de la baseline en cour...
-          Appuyez sur stop uen fois les 5 minutes passées.`;
+          statusText.textContent = `Enregistrement de la baseline en cours...
+          Appuyez sur stop une fois les 5 minutes passées.`;
         } else if (roomId == 1) {
           statusText.textContent = `Enregistrement du karaoké en cours...
           Appuyez sur stop une fois le karaoké terminé.`;
@@ -426,6 +435,7 @@
       isRecording = false;
       startTime = null;
       recordingFinished = false;
+      stopTimer();  
       init();
 
       fetch(`/api/record/cancel/${userId}/${roomId}`, {
@@ -480,10 +490,15 @@
         const minutes = Math.floor(elapsed / 60000);
         const seconds = Math.floor((elapsed % 60000) / 1000);
 
-        if (minutes > 5 && roomId == 0) {
-          beepSound.currentTime = 0; // Reset to start
-          beepSound.play().catch(e => console.log('Audio play failed:', e));
-          buttonText.textContent = 'STOP';
+        // When minimum time is reached for baseline : beeps and vibrates
+        if (minutes == 5 && seconds == 0 && roomId == 0) {
+          buttonText.textContent = 'STOP'; 
+          alertUser();
+        }
+
+        // When maximum time is reached : stops recording
+        if (minutes == 10) {
+          toggleRecording();
         }
 
         document.getElementById('timerDisplay').textContent =
@@ -513,6 +528,44 @@
       if (wakeLock) {
         wakeLock.release();
         wakeLock = null;
+      }
+    }
+
+    // Enable audio and vibration (requires user interaction)
+    function enableAudioAndVibration() {
+      try {
+        
+        // Test beep to "wake up" audio
+        beepSound.volume = 0.1;
+        beepSound.play().then(() => {
+          beepSound.volume = 1.0;
+          audioEnabled = true;
+        }).catch(e => {
+          console.log('Audio enable failed:', e);
+        });
+
+        // Test vibration
+        if ('vibrate' in navigator) {
+          navigator.vibrate(100);
+        } else {
+          console.log('Vibration not supported');
+        }
+        
+      } catch (error) {
+        console.error('Error enabling audio/vibration:', error);
+      }
+    }
+
+    // Combined alert function
+    function alertUser(type = 'normal') {
+      
+      if (audioEnabled) {
+        beepSound.currentTime = 0;
+        beepSound.play().catch(e => console.log('Audio play failed:', e));
+      }
+      
+      if ('vibrate' in navigator) {
+        navigator.vibrate(200);
       }
     }
 
