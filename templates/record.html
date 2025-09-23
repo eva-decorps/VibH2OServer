@@ -220,6 +220,8 @@
     const roomRecording = {{roomRecording}};
     // Prevent screen sleep during recording (if supported)
     let wakeLock = null;
+    // Beeper
+    const beepSound = new Audio('/ressources/beep-recording-end.mp3');
 
     // Mettre une fonction init ici : 
     function init() {
@@ -478,7 +480,11 @@
         const minutes = Math.floor(elapsed / 60000);
         const seconds = Math.floor((elapsed % 60000) / 1000);
 
-        if (minutes > 5) buttonText.textContent = 'STOP';
+        if (minutes > 5 && roomId == 0) {
+          beepSound.currentTime = 0; // Reset to start
+          beepSound.play().catch(e => console.log('Audio play failed:', e));
+          buttonText.textContent = 'STOP';
+        }
 
         document.getElementById('timerDisplay').textContent =
           `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
