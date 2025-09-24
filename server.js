@@ -1,17 +1,10 @@
 // Simple Node.js server to display BPM chart
 const express = require('express');
 const fs = require('fs');
-const https = require('https');
 const path = require('path');
 const osc = require('osc');
 const app = express();
 const PORT = 3000;
-
-// Create self-signed certificate (for development)
-const options = {
-  key: fs.readFileSync('key.pem'),
-  cert: fs.readFileSync('cert.pem')
-};
 
 ////
 // PARSE ARGUMENTS
@@ -802,10 +795,6 @@ app.post('/api/registration/new/:userId', (req, res) => {
   });
 });
 
-
-https.createServer(options, app).listen(3000, () => {
-  console.log('HTTPS Server running on port 3000');
-});
 
 // Server startup
 app.listen(SERVER_PORT, '0.0.0.0', () => {
