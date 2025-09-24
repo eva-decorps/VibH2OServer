@@ -45,7 +45,7 @@
     }
 
     .explanation-text {
-      color: #a0a6c0;
+      color: #c9cddf;
       font-size: 1.1rem;
       line-height: 1.6;
       margin-top: 5px;
@@ -61,7 +61,8 @@
   <div class="container">
 
     <h1>Corps connectés</h1>
-    <h2> <p class="subtitle"> Oups /p> </h2>
+    <h2> <p class="subtitle"> Oups </p> </h2>
+    <h3> <p class="timing"> </p> </h3>
     
 
     <div id="explanation" class="explanation">
@@ -87,105 +88,130 @@
   const stage = "{{stage}}";
 
   const subtitle = document.getElementsByClassName("subtitle")[0];
+  const timing = document.getElementsByClassName("timing")[0];
   const explanation = document.getElementsByClassName("explanation-text")[0];
   const nextBtn = document.getElementById("next-btn");
   const backBtn = document.getElementById("back-btn");
 
+  backBtn.style.display = 'none';
+  timing.style.display = 'none';
+
   // Change text depending at what stage we are at
-  if (stage == 'onboarding') {
+  if (stage == 'onboarding1') {
 
-    subtitle.innerText = `Bienvenu·e !`;
+    subtitle.innerText = `Bienvenue !`;
+    nextBtn.innerText = 'Suivant';
 
-    explanation.innerText = `
-    Bienvenue dans votre voyage émotionnel.
-    Vous allez traverser plusieurs expériences. Celles-ci sont indiquées par une pastille de couleur bleue dans l’espace du musée. 
-    Chacune des expériences vous invite à explorer votre corps, vos ressentis, vos émotions.
-    L’application sera votre guide et le reflet de vos états intérieurs tout au long du parcours…
-    `;
+    explanation.innerHTML = `
+      <p>Bienvenue dans votre voyage émotionnel. </p>
+      <p>Suivez les <span style="color:#6E92DB;"><strong>pastilles bleues</strong></span> et laissez l’application vous guider 
+        le long d’un parcours centré sur vos ressentis, vos émotions. </p>`
 
-    nextBtn.innerText = 'Suivant'
+  } else if (stage == 'onboarding2') {
+
+    subtitle.innerText = `Bienvenue !`;
+    nextBtn.innerText = 'Suivant';
+
+    explanation.innerHTML = `
+      <p>Si vous rencontrez le moindre problème ou avez une question, n'hésitez pas à vous adressez aux 
+        personnes portant un t-shirt blanc avec une pastille noires.</p>`;
 
   } else if (stage == 'baseline') {
 
-    subtitle.innerText = `Enregistrement de la baseline`;
+    subtitle.innerText = `1. Installation: Cinéma`;
+    timing.style.display = 'block';
+    timing.innerText = '5 min';
+    nextBtn.innerText = 'Suivant';
 
-    explanation.innerText = `
-    The first step is to record the baseline.
-    Make yourself confortable to watch the movie and relax. This will take 
-    5 minutes for the result to be scientifically correct. When you are ready press
-    the record button. The recording will stop automatically after 5 minutes and you 
-    will be noticed by a soft ring.`;
-
-    nextBtn.innerText = 'Suivant'
-
+    explanation.innerHTML = `
+      <p>Installez-vous face au documentaire. Observez le film et laissez vos émotions se déposer 
+        tranquillement dans l’instant présent…</p>`;
 
   } else if (stage == 'post-baseline') {
 
-    subtitle.innerText = `Enregistrement de la baseline`;
+    subtitle.style.display = `none`;
+    nextBtn.innerText = 'Suivant';
 
-    explanation.innerText = `
-    Ici on explique scientifiquement à quoi ça sert.`;
-
-    nextBtn.innerText = 'Suivant'
-  
+    explanation.innerHTML = `
+      <p>Merci pour votre temps. Il nous a permis de vous contempler plus en profondeur, au-delà 
+        des apparences… </p>
+      <p>Vous pouvez désormais vous dirigez vers deux nouvelles expériences : le karaoké ou la fresque des émotions.</p>`;
+    
   } else if (stage == 'karaoke') {
 
-    subtitle.innerText = `Enregistrement du Karaoké`;
+    subtitle.innerText = `2. Installation : Karaoké`;
+    timing.style.display = 'block';
+    timing.innerText = '10 min';
+    nextBtn.innerText = 'Suivant';
 
-    explanation.innerText = `
-    wow karaoke is so fun, even funnier with friends !!
-    `;
-
-    nextBtn.innerText = 'Suivant'
+    explanation.innerHTML = `
+      <p>Maintenant, le voyage prend une nouvelle forme. Parfois en solo, parfois en duo, ou en groupe…</p>
+      <p>Alors, vous chantez seul ou vous rejoignez la bande ?</p>`;
 
   } else if (stage == 'post-karaoke') { 
 
-    subtitle.innerText = `Enregistrement du Karaoké`;
+    subtitle.style.display = `none`;
+    nextBtn.innerText = 'Suivant';
 
-    explanation.innerText = `
-    On explique pourquoi c'est tellement plus fun avec des ami.es
-    `;
+    explanation.innerHTML = `
+      <p>Les émotions ne restent pas seulement intérieures : elles circulent, se propagent et créent des liens invisibles 
+        entre les individus…</p>
+      <p>Ici vous pouvez observer comment votre rythme cardiaque s’est emballé et comment il a aussi vibré à l’unisson avec les 
+        autres participants.`;
 
-    nextBtn.innerText = 'Suivant'
+  } else if (stage == 'fresque1') {
 
-  } else if (stage == 'fresque') {
+    subtitle.innerText = `3. Installation : Fresque des émotions`;
+    timing.style.display = 'block';
+    timing.innerText = '? min';
+    nextBtn.innerText = 'Suivant';
 
-    subtitle.innerText = `Enregistrement de la fresque`;
+    explanation.innerHTML = `
+      <p>Dans la vie, notre corps et nos sens nous guident.<p/>
+      <p>Maintenant, c’est à vous de choisir ce qui stimulera vos émotions. <br>
+        Choisissez une de ces questions inspirées de la fresque collective :</p>
+      <p style="color:#EB7C38;">Dans une foule en plein concert, <br>
+        je me sens…<br>
+        Dans une manifestation, <br>
+        je pense que la foule est…<br></p>`;
 
-    explanation.innerText = `
-    bla bla bla la fresque les exercices`;
+  } else if (stage == 'fresque2') {
+    
+    subtitle.style.display = `none`;
+    nextBtn.innerText = 'Suivant';
 
-    nextBtn.innerText = 'Suivant'
+    explanation.innerHTML = `
+      <p>Laissez vos sens, corps et votre imagination créer une situation qui provoque vos émotions. </p>
+      <p>Pour vous aider : quelques postures sont suggérées. Les pistes audio vous aident à vous immerger davantage. 
+        Mais vous pouvez aussi suivre vos propres idées.</p>`;
 
   } else if (stage == 'post-fresque') {
 
-    subtitle.innerText = `Enregistrement de la fresque`;
+    subtitle.style.display = `none`;
+    nextBtn.innerText = 'Suivant';
 
-    explanation.innerText = `
-    explication scientifique fresque`;
-  
-    nextBtn.innerText = 'Suivant'
-
-  } else if (stage == 'result') {
-
-    subtitle.innerText = `Accès aux résultats`;
-
-    explanation.innerText = `
-    We already reached the end of our experiment !
-    You can now access the result, compare it with your friends and let's meet outside !
-    dont forget toi give the sensor back ;)`;
-
-    nextBtn.innerText = 'Suivant'
-
-  } else if (stage == 'exit') {
+    explanation.innerHTML = `
+      <p>Cette expérience s’inspire des recherches sur la perception et la régulation des émotions : </p>
+      <p>apprendre à reconnaître son état intérieur, puis à l’exprimer ou à le transformer à travers l’art, les techniques 
+        de respiration, ou un geste symbolique.</p>`;
+    
+  } else if (stage == 'exit1') {
 
     subtitle.innerText = `Finir l'expérience`;
-
-    explanation.innerText = `
-    Êtes vous sûr·e de vouloir partir ? Vous ne pourrez plus visualizer vos résultats après ça.`;
-
     nextBtn.innerText = 'Terminer';
-    backBtn.style.display = 'block'; ;
+    backBtn.style.display = 'block';
+
+    explanation.innerHTML = `
+      <p>Avez-vous pris une capture d'écran de vos émotions ? Vous ne pourrez plus visualiser vos résultats après avoir terminé.</p>`;
+
+  } else if (stage == 'exit2') {
+
+    subtitle.style.display = 'none';
+    nextBtn.style.display = 'none';
+
+    explanation.innerHTML = `
+      <p>N'oubliez pas de rendre votre bracelet à la personne avec un t-shirt blanc avec un pastille noire à la sortie !</p>
+      <p>Merci pour votre participation.</p>`;
   }
 
   // Next button - redirect to wherever it should depending on step
@@ -198,7 +224,9 @@
     // Redirect toward right page
     setTimeout(() => {
 
-      if (stage == 'onboarding') {
+      if (stage == 'onboarding1') {
+        window.location.href = `/info-panel/onboarding2/${userId}`;
+      } else if (stage == 'onboarding2') {
         window.location.href = `/info-panel/baseline/${userId}`;
       } else if (stage == 'baseline') {
         window.location.href = `/room/0/${userId}`;
@@ -208,13 +236,17 @@
         window.location.href = `/room/1/${userId}`;
       } else if (stage == 'post-karaoke') { 
         window.location.href = `/room-selection/${userId}`;
-      } else if (stage == 'fresque') {
+      } else if (stage == 'fresque1') {
+        window.location.href = `/info-panel/fresque2/${userId}`;
+      } else if (stage == 'fresque2') {
         window.location.href = `/room/2/${userId}`;
       } else if (stage == 'post-fresque') {
         window.location.href = `/room-selection/${userId}`;
       } else if (stage == 'result') {
         window.location.href = `/room-selection/${userId}`;
-      } else if(stage == 'exit') {
+      } else if (stage == 'exit1') {
+        window.location.href = `/info-panel/exit2/${userId}`;
+      } else if (stage == 'exit2') {
         window.location.href = '/';
       } else {
         window.location.href = '/';

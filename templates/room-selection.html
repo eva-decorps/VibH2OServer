@@ -92,7 +92,7 @@
       padding: 15px 35px;
       font-size: 1.1rem;
       font-weight: 500;
-      border: 2px solid rgba(160, 166, 192, 0.3);
+      border: 2px solid rgba(255, 0, 64, 0.347);
       border-radius: 25px;
       cursor: pointer;
       transition: all 0.3s ease;
@@ -187,11 +187,11 @@
 <body>
   <div class="container">
     <h1>Corps connectés</h1>
-    <p class="subtitle">Sélectionnez une installation pour enregistrer ou visualiser vos données.</p>
+    <p class="subtitle">Trouvez une des installations marquée par une pastille bleue pour enregistrer puis visualiser vos données émotionnelles.</p>
 
     <div class="room-list">
-      <button data-room="1" class="room-button room-1">Karaoke</button>
-      <button data-room="2" class="room-button room-2">Fresque</button>
+      <button data-room="1" class="room-button room-1">Le Karaoké</button>
+      <button data-room="2" class="room-button room-2">La Fresque des émotions</button>
     </div>
 
     <div class="exit-section">
@@ -221,7 +221,7 @@
           if (roomId == 1 && showInfoRoom1) {
             window.location.href = `/info-panel/karaoke/${userId}`;
           } else if (roomId == 2 && showInfoRoom2) {
-            window.location.href = `/info-panel/fresque/${userId}`;
+            window.location.href = `/info-panel/fresque1/${userId}`;
           } else {
              window.location.href = `/room/${roomId}/${userId}`;
           }
@@ -232,7 +232,7 @@
     
     // Exit
     function exit() {
-      window.location.href = `/info-panel/exit/${userId}`;
+      window.location.href = `/info-panel/exit1/${userId}`;
     }
 
     // Add touch feedback for better mobile experience

@@ -56,15 +56,27 @@ body {
 /* Common heading styles */
 h1 {
   text-align: center;
-  margin-bottom: 0px;
-  color: #e0e6f0;
+  color: #de5151;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
   margin-top: 0;
+  margin-bottom: 0;
 }
 
 h2 {
+  font-size: 1.3rem;
   margin-top: 0;
-  margin-bottom: 0px;
+  margin-bottom: 0;
+}
+
+h3 {
+  font-size: 1rem;
+  color: #979ab5;
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+h2, h3 {
+  line-height: 0; /* tighter line spacing */
 }
 
 /* Common button styles */
@@ -149,7 +161,7 @@ input[type="text"]:focus {
   
   h1 {
     font-size: 1.8rem;
-    margin-bottom: 20px;
+    margin-bottom: 10px;
   }
   
   input[type="text"],
@@ -169,6 +181,6 @@ input[type="text"]:focus {
   
   h1 {
     font-size: 1.6rem;
-    margin-bottom: 15px;
+    margin-bottom: 10px;
   }
 }

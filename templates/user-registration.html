@@ -112,10 +112,8 @@
   <div class="container">
     <h1>Corps connectés</h1>
     <p class="subtitle"> 
-      Vous êtes authentifié·e avec le capteur numéro <strong id="sensor-number">001</strong>. <br>
-      Vérifiez que cela correspond bien au numéro inscrit sur votre capteur. <br>
-      <br>
-      Si vous vous êtes déjà connecté·e cliquez sur Reprendre l'expérience. Vous serez redirigé·e là où vous vous êtes arrété·e.
+      <strong>Vous êtes authentifié·e avec le capteur numéro </strong><strong id="sensor-number">001</strong>. <br>
+      Si vous vous êtiez déjà connecté·e cliquez sur Reprendre l'expérience.
     </p>
 
     <div class="button-list">
@@ -159,7 +157,7 @@
         if (data.success) {
           // Hide buttons and show explanation
           setTimeout(() => {
-            window.location.href = `/info-panel/onboarding/${userId}`;
+            window.location.href = `/info-panel/onboarding1/${userId}`;
           }, 200);
         } else {
           console.error('Failed to reset data for user:', data.message);
@@ -186,7 +184,7 @@
         } else if (baselineStatus == "recording") {
           window.location.href = `/room/0/${userId}`
         } else {
-          window.location.href = `/info-panel/onboarding/${userId}`;
+          window.location.href = `/info-panel/onboarding1/${userId}`;
         }
       }, 200);
     });

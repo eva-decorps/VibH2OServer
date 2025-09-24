@@ -291,12 +291,12 @@
         cancelButton.style.display = 'none';
         
         if (roomId == 0) {
-          statusText.textContent = `Prêt·e pour l'enregistrement de la baseline ? 
-          Appuyer sur le bouton record et arrêtez après 5 minutes au moins.`;
+          statusText.textContent = `
+          Quand vous êtes assis·e, détendez-vous et appuyez sur "Record", l’enregistrement s'achèvera par un signal sonore.`;
           nextButton.style.display = 'none';
         } else if (roomId == 1) {
-          statusText.textContent = `Prêt·e pour l'enregistrement du karaoke ? 
-          Appuyer sur le bouton record et arrêtez quand vous sortez du karaoke.`;
+          statusText.textContent = `N’oubliez pas d’activer le bouton “Enregistrement“ 
+          au début et “Stop” à la fin de votre performance”`;
           nextButton.textContent = `Retour à la sélection`;
           nextButton.style.display = 'block';
         } else if (roomId == 2) {
@@ -377,9 +377,9 @@
         const elapsedMin = (Date.now() - startTime) / 60000;
         if (roomId == 0 && elapsedMin < 5) 
         {
-          statusText.textContent = `Enregistrement de la baseline en cour...
-          Encore un peu de patience ! Vous ne pourrez arreter qu'une fois les 5 minutes passées.`;
-
+          statusText.textContent = `Enregistrement de la baseline en cours (5 min)...
+          Encore un peu de patience !`;
+          
         } else 
         {
           // Stop recording
