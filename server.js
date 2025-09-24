@@ -479,6 +479,37 @@ app.get('/room-selection/:userId', (req, res) => {
   res.send(roomSelectionHtml);
 });
 
+// Multiplayer mode
+app.get('/multiplayer/:roomId/:userId', (req, res) => {
+  const { roomId, userId } = req.params;
+
+  // If user doesn't exist throw error
+  if (!userData[userId]) {
+    const errorHtml = loadTemplate('error', {
+      userId: req.params.userId,
+      numSeats: NUM_SEATS
+    });
+
+    res.status(404).send(errorHtml);
+    return;
+  }
+
+  // Validate room ID (0-2)
+  if (roomId < 0 || roomId > 2) {
+    return res.status(400).json({ 
+      success: false, 
+      message: 'Invalid room ID' 
+    });
+  }
+
+  const multiplayerHtml = loadTemplate('multiplayer', {
+    userId: userId,
+    roomId: roomId
+  });
+
+  res.send(multiplayerHtml);
+});
+
 // Get the right graph for the room and user
 app.get('/room/:roomId/:userId', (req, res) => {
   const { roomId, userId } = req.params;
@@ -486,7 +517,7 @@ app.get('/room/:roomId/:userId', (req, res) => {
   // If user doesn't exist throw error
   if (!userData[userId]) {
     const errorHtml = loadTemplate('error', {
-      userId: req.params.userId,
+      userId: userId,
       numSeats: NUM_SEATS
     });
 

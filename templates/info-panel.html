@@ -147,6 +147,25 @@
     explanation.innerHTML = `
       <p>Maintenant, le voyage prend une nouvelle forme. Parfois en solo, parfois en duo, ou en groupe…</p>
       <p>Alors, vous chantez seul ou vous rejoignez la bande ?</p>`;
+    
+  } else if (stage == 'karaoke-solo') {
+
+    subtitle.style.display = 'none';
+    nextBtn.innerText = 'Suivant';
+
+    explanation.innerHTML = `
+      <p>Vous avez choisi le mode solo. </p>
+      <p>Chantez, laissez-vous emporter. Votre énergie se reflète dans votre rythme cardiaque, en résonance avec la musique. </p>`;
+
+  }  else if (stage == 'karaoke-multi') {
+
+    subtitle.style.display = 'none';
+    nextBtn.innerText = 'Suivant';
+
+    explanation.innerHTML = `
+      <p>Vous avez choisi le mode multi-joueur. </p>
+      <p>Chantez, laissez-vous emporter. Votre énergie se reflète dans votre rythme cardiaque, en résonance avec la musique
+        et avec les autres. </p>`;
 
   } else if (stage == 'post-karaoke') { 
 
@@ -233,6 +252,10 @@
       } else if (stage == 'post-baseline') {
         window.location.href = `/room-selection/${userId}`;
       } else if (stage == 'karaoke') {
+        window.location.href = `/multiplayer/1/${userId}`;
+      } else if (stage == 'karaoke-solo') {
+        window.location.href = `/room/1/${userId}`;
+      } else if (stage == 'karaoke-multi') {
         window.location.href = `/room/1/${userId}`;
       } else if (stage == 'post-karaoke') { 
         window.location.href = `/room-selection/${userId}`;

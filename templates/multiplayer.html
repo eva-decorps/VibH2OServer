@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Room Selection - Emotional Map</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="/shared-styles.css">
+  
+  <style>
+
+    .mode-list {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      margin-top: 30px;
+    }
+
+    .player-inputs {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 20px;
+      padding: 12px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .player-inputs {
+      margin: 0 0 0 0;
+      color: #e0e6f0;
+      text-align: center;
+      font-size: 1.1rem;
+      font-weight: normal;
+    }
+
+    .input-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .player-input {
+      padding: 10px 8px;
+      border: 1px solid #333;
+      border-radius: 6px;
+      background: #2a3050;
+      color: #e0e6f0;
+      font-size: 14px;
+      transition: all 0.3s ease;
+      box-sizing: border-box;
+      width: 100%;
+    }
+
+    .player-input::placeholder {
+      color: #979ab5;
+    }
+
+    .player-input:focus {
+      outline: none;
+      border-color: #3e7552;
+      box-shadow: 0 0 5px rgba(62, 117, 82, 0.3);
+    }
+
+    .error-message {
+      color: #721c24;
+      text-align: center;
+      font-weight: bold;
+      margin-top: 10px;
+      padding: 10px;
+      background: #f8d7da;
+      border-radius: 6px;
+      display: none;
+    }
+    
+    .info {
+      font-size: 1rem;
+      color: #979ab5;
+      margin-top: 0;
+      margin-bottom: 0;
+    }
+
+    /* Mobile responsiveness for inputs */
+    @media (max-width: 480px) {
+      .player-input {
+        font-size: 14px;
+        padding: 8px 6px;
+      }
+      
+      .player-inputs {
+        padding: 10px;
+      }
+      
+      .input-row {
+        gap: 6px;
+      }
+    }
+
+    .game-mode {
+      padding: 10px 10px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      border: none;
+      border-radius: 15px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      color: white;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+      min-height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .game-mode:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    }
+
+    .game-mode:active {
+      transform: translateY(-1px);
+      transition: all 0.1s ease;
+    }
+
+    /* Room-specific gradients */
+    .solo { 
+      background: linear-gradient(135deg, #ff6b6b 0%, #ff8e53 100%); 
+    }
+    
+    .multi { 
+      background: linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%); 
+    }
+
+    /* Hover effects */
+    .solo:hover { 
+      background: linear-gradient(135deg, #ff8e53 0%, #ff6b6b 100%); 
+    }
+    
+    .multi:hover { 
+      background: linear-gradient(135deg, #44a08d 0%, #4ecdc4 100%); 
+    }
+
+  </style>
+
+</head>
+
+<body>
+  <div class="container">
+    <h1>Corps connectés</h1>
+
+    <div class="mode-list">
+      <button class="game-mode solo" onclick="soloMode()">Solo</button>
+
+      <p class="info">Seul une personne doit remplir cette section avec les identifiant des autres participant·es du Karaoké.
+        Il ou elle pourra ensuite lancer l'enregistrement pour tout·es les participant·es. </p>
+      
+      <div class="player-inputs">
+
+        <div class="input-row">
+          <input type="number" class="player-input" id="player1" placeholder="Joueur 1 (ID)">
+          <input type="number" class="player-input" id="player2" placeholder="Joueur 2 (ID)">
+        </div>
+        <div class="input-row">
+          <input type="number" class="player-input" id="player3" placeholder="Joueur 3 (ID)">
+          <input type="number" class="player-input" id="player4" placeholder="Joueur 4 (ID)">
+        </div>
+        <div class="error-message" id="errorMessage">
+          Veuillez remplir au moins un champ pour jouer en multijoueur
+        </div>
+      </div>
+      
+      <button class="game-mode multi" onclick="multiMode()">Multi-joueur</button>
+    </div>
+
+    <div class="exit-section">
+      <button class="exit-button" onclick="backToSelection()">Retour à la sélection</button>
+    </div>
+
+  </div>
+
+  <script>
+
+    const userId = {{userId}};
+    const roomId = {{roomId}};
+
+    function backToSelection() {
+       window.location.href = `/room-selection/${userId}`;
+    }
+
+    function soloMode() {
+      window.location.href = `/info-panel/karaoke-solo/${userId}`;
+    }
+
+    function multiMode() {
+      // Récupérer les valeurs des champs
+      const player1 = document.getElementById('player1').value.trim();
+      const player2 = document.getElementById('player2').value.trim();
+      const player3 = document.getElementById('player3').value.trim();
+      const player4 = document.getElementById('player4').value.trim();
+      
+      // Filtrer les champs non vides
+      const playerIds = [];
+      if (player1) playerIds.push(parseInt(player1));
+      if (player2) playerIds.push(parseInt(player2));
+      if (player3) playerIds.push(parseInt(player3));
+      if (player4) playerIds.push(parseInt(player4));
+      
+      // Vérifier qu'au moins un champ est rempli
+      if (playerIds.length === 0) {
+        const errorMessage = document.getElementById('errorMessage');
+        errorMessage.style.display = 'block';
+        
+        return;
+      }
+      
+      // Masquer le message d'erreur s'il était affiché
+      document.getElementById('errorMessage').style.display = 'none';
+      
+      // Construire l'URL avec les IDs des joueurs
+      const playerIdsParam = playerIds.join(',');
+      window.location.href = `/info-panel/karaoke-multi/${userId}?players=${playerIdsParam}`;
+    }
+
+  </script>
+
+</body>
+</html>

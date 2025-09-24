@@ -143,6 +143,70 @@ input[type="text"]:focus {
   color: #0c5460;
 }
 
+/* Exit button section */
+.exit-section {
+  margin-top: 50px;
+  padding-top: 30px;
+  border-top: 2px solid rgba(160, 166, 192, 0.2);
+  position: relative;
+}
+
+.exit-section::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(160, 166, 192, 0.4), transparent);
+}
+
+.exit-button {
+  padding: 15px 35px;
+  font-size: 1.1rem;
+  font-weight: 500;
+  border: 2px solid rgba(141, 135, 180, 0.347);
+  border-radius: 25px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: #a0a6c0;
+  background: rgba(160, 166, 192, 0.05);
+  backdrop-filter: blur(10px);
+  min-height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  width: fit-content;
+  margin: 0 auto;
+}
+
+.exit-button:hover {
+  transform: translateY(-2px);
+  border-color: rgba(160, 166, 192, 0.5);
+  background: rgba(160, 166, 192, 0.1);
+  color: #c0c6dc;
+  box-shadow: 0 4px 15px rgba(160, 166, 192, 0.1);
+}
+
+.exit-button:active {
+  transform: translateY(0px);
+  transition: all 0.1s ease;
+}
+
+.exit-button::before {
+  content: '←';
+  margin-right: 8px;
+  font-size: 1.2em;
+  transition: transform 0.3s ease;
+}
+
+.exit-button:hover::before {
+  transform: translateX(-3px);
+}
+
 /* Mobile responsiveness for all containers */
 @media (max-width: 480px) {
   body {
@@ -168,6 +232,17 @@ input[type="text"]:focus {
   .btn-primary {
     font-size: 14px;
     padding: 10px 15px;
+  }
+
+  .exit-section {
+    margin-top: 40px;
+    padding-top: 25px;
+  }
+  
+  .exit-button {
+    padding: 12px 30px;
+    font-size: 1rem;
+    min-height: 45px;
   }
 }
 
