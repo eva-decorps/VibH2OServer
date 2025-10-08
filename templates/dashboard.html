@@ -6,32 +6,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@1.4.0/dist/chartjs-plugin-annotation.min.js"></script>
+  <link rel="stylesheet" href="/shared-styles.css">
 
   <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      height: 100vh;
-      font-family: Arial, sans-serif;
-      background: #0d142b;
-      color: #e0e6f0;
-      overflow-x: hidden;
-    }
-
-    .container {
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
-      padding: 20px;
-      box-sizing: border-box;
-    }
 
     /* Header Section */
     .header-section {
       text-align: center;
-      padding: 20px 0;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-      margin-bottom: 20px;
+      flex: 1;
     }
 
     .room-title {
@@ -49,54 +31,31 @@
       opacity: 0.9;
     }
 
-    .logout-btn {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      padding: 10px 20px;
-      background: #5b232f;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 0.9rem;
-      transition: background-color 0.3s;
-    }
-
-    .logout-btn:hover {
-      background: #441a23;
-    }
-
     /* Stats Section */
     .stats-section {
-      margin-bottom: 30px;
+      margin-bottom: 0px;
     }
 
     .stats-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 15px;
-      margin-bottom: 20px;
+      gap: 10px;
+      margin-bottom: 10px;
+      margin-top: 10px;
     }
 
     .stat-card {
       background: rgba(255, 255, 255, 0.05);
       border-radius: 15px;
-      padding: 20px;
+      padding: 10px;
       text-align: center;
       backdrop-filter: blur(10px);
       box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
       border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
-    .stat-icon {
-      font-size: 1.5rem;
-      margin-bottom: 8px;
-      display: block;
-    }
-
     .stat-value {
-      font-size: 2rem;
+      font-size: 1.2rem;
       font-weight: bold;
       color: #e0e6f0;
       margin: 0;
@@ -111,26 +70,22 @@
     }
 
     .stat-unit {
-      font-size: 1.2rem;
-      color: #a0a6c0;
-      font-weight: normal;
+      font-size: 1rem;
+      font-weight: bold;
+      color: #e0e6f0;
+      margin: 0;
+      line-height: 1;
     }
 
     /* Chart Section */
     .chart-section {
       flex: 1;
-      min-height: 300px;
-      background: rgba(255, 255, 255, 0.05);
-      border-radius: 15px;
-      padding: 20px;
-      backdrop-filter: blur(10px);
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      margin-bottom: 20px;
+      min-height: 250px;
+      margin-bottom: 10px;
     }
 
     .chart-container {
-      height: 300px;
+      height: 250px;
       position: relative;
     }
 
@@ -147,7 +102,7 @@
       color: white;
       box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
       background: linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%);
-      margin-bottom: 20px;
+      margin-bottom: 0px;
     }
 
     .back-button:hover {
@@ -160,83 +115,36 @@
       transform: translateY(0);
     }
 
-    canvas {
-      width: 100% !important;
-      height: 100% !important;
-    }
-
-    /* Responsive Design */
-    @media (max-width: 480px) {
-      .container {
-        padding: 15px;
-        min-width: 280px;
-      }
-      
-      .room-title {
-        font-size: 2rem;
-      }
-      
-      .stat-value {
-        font-size: 1.8rem;
-      }
-      
-      .logout-btn {
-        top: 15px;
-        right: 15px;
-        padding: 8px 15px;
-        font-size: 0.8rem;
-      }
-      
-      .chart-container {
-        height: 250px;
-      }
-      
-      .session-duration {
-        font-size: 1.5rem;
-        margin-top: -30px;
-      }
-    }
-
-    @media (max-height: 700px) {
-      .chart-container {
-        height: 200px;
-      }
-    }
   </style>
 </head>
 
 <body>
   <div class="container">
-    <button class="logout-btn" onclick="logout()">Logout</button>
 
     <!-- Header Section -->
     <div class="header-section">
-      <h1 class="room-title">Corps connectés</h1>
-      <p class="room-subtitle">Room 1</p>
+      <h1>Corps connectés</h1>
+      <p class="room-subtitle">Karaoké / Cinéma / ?</p>
     </div>
 
     <!-- Stats Section -->
     <div class="stats-section">
       <div class="stats-grid">
         <div class="stat-card">
-          <span class="stat-icon">⏱️</span>
-          <div class="stat-value" id="durationValue">0:00:00</div>
-          <div class="stat-label">Duration</div>
+          <div class="stat-label">Durée</div>
+          <div class="stat-value" id="durationValue">00:00</div>
         </div>
         <div class="stat-card">
-          <span class="stat-icon">💖</span>
-          <div class="stat-value" id="avgHrValue">0<span class="stat-unit">bpm</span></div>
-          <div class="stat-label">HR avg</div>
-        </div>
-        <div class="stat-card">
-          <span class="stat-icon">🔥</span>
-          <div class="stat-value" id="caloriesValue">0<span class="stat-unit">kcal</span></div>
           <div class="stat-label">Calories</div>
+          <div class="stat-value" id="caloriesValue">0<span class="stat-unit"> kcal</span></div>
         </div>
         <div class="stat-card">
-          <span class="stat-icon">💖</span>
-          <div class="stat-value" id="maxHrValue">0<span class="stat-unit">bpm</span></div>
-          <div class="stat-label">HR max</div>
+          <div class="stat-label">Fréquence moyenne</div>
+          <div class="stat-value" id="avgHrValue">0<span class="stat-unit"> bpm</span></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Fréquence maximun</div>
+          <div class="stat-value" id="maxHrValue">0<span class="stat-unit"> bpm</span></div>
         </div>
       </div>
     </div>
@@ -250,7 +158,7 @@
 
     <!-- Back Button -->
     <button class="back-button" onclick="backToRoomSelection()">
-      Back to Room Selection
+      Retour à la sélection
     </button>
   </div>
 
@@ -269,16 +177,15 @@
       }
     };
 
-    function logout() {
-      // Reset values
-      currentUser = null;
-      if(chart) {
-        chart.destroy();
-        chart = null;
-      }
-
-      // Redirect toward authentication page
-      window.location.href = '/';
+    // Update room title
+    const roomTitle = document.getElementsByClassName("room-subtitle")[0];
+    if (roomId == 0) {
+      roomTitle.innerHTML = "Cinéma";
+    } else if (roomId == 1) {
+      roomTitle.innerHTML = "Karaoké";
+    } else if (roomId == 2) {
+      console.log("hey")
+      roomTitle.innerHTML = "Fresque des émotions";
     }
 
     function backToRoomSelection() {
@@ -305,20 +212,20 @@
         const minutes = Math.floor((duration % 3600) / 60);
         const seconds = Math.floor(duration % 60);
         document.getElementById('durationValue').textContent = 
-          `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+          `${minutes.toString().padStart(2, '0')}'${seconds.toString().padStart(2, '0')}''`;
       }
 
       // Calculate average HR
       const validBpm = bpmData.filter(val => val !== null && val > 0);
       if (validBpm.length > 0) {
         const avgHr = Math.round(validBpm.reduce((sum, val) => sum + val, 0) / validBpm.length);
-        document.getElementById('avgHrValue').innerHTML = `${avgHr}<span class="stat-unit">bpm</span>`;
+        document.getElementById('avgHrValue').innerHTML = `${avgHr}<span class="stat-unit"> bpm</span>`;
       }
 
       // Calculate max HR
       if (validBpm.length > 0) {
         const maxHr = Math.max(...validBpm);
-        document.getElementById('maxHrValue').innerHTML = `${maxHr}<span class="stat-unit">bpm</span>`;
+        document.getElementById('maxHrValue').innerHTML = `${maxHr}<span class="stat-unit"> bpm</span>`;
       }
 
       // Estimate calories (simple formula: avg HR * duration in hours * weight factor)
@@ -326,7 +233,7 @@
         const avgHr = validBpm.reduce((sum, val) => sum + val, 0) / validBpm.length;
         const durationHours = (time[time.length - 1] - time[0]) / (1000 * 3600);
         const estimatedCalories = Math.round(avgHr * durationHours * 3.5); // Rough estimation
-        document.getElementById('caloriesValue').innerHTML = `${estimatedCalories}<span class="stat-unit">kcal</span>`;
+        document.getElementById('caloriesValue').innerHTML = `${estimatedCalories}<span class="stat-unit"> kcal</span>`;
       }
     }
 
@@ -335,11 +242,10 @@
       const startTime = time[0];
       const labels = time.map(timestamp => {
         const elapsedSeconds = (timestamp - startTime)/1000;
-        const hours = Math.floor(elapsedSeconds / 3600);
-        const minutes = Math.floor((elapsedSeconds % 3600) / 60);
-        const seconds = Math.floor(elapsedSeconds % 3600);
+        const minutes = Math.floor(elapsedSeconds / 60);
+        const seconds = Math.floor(elapsedSeconds % 60);
       
-        return hours + ':' + minutes.toString().padStart(2, '0') + ':' + seconds.toString().padStart(2, '0');
+        return minutes.toString().padStart(2, '0') + ':' + seconds.toString().padStart(2, '0');
       });
       
       // Define y bounds
@@ -355,7 +261,7 @@
       // Define datasets
       const datasets = [
         {
-          label: 'Seat ' + profileName,
+          label: profileName,
           data: bpmData,
           borderColor: '#36A2EB',
           borderWidth: 2,
@@ -397,7 +303,7 @@
               max: yMaxBound,
               title: {
                 display: true,
-                text: 'BPM',
+                text: 'Bpm',
                 color: '#737fa9',
                 font: {
                   size: 14
@@ -416,7 +322,7 @@
             x: {
               title: {
                 display: true,
-                text: 'Time (h:min)',
+                text: 'Temps (min:sec)',
                 color: '#737fa9',
                 font: {
                   size: 14
