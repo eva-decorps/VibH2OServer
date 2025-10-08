@@ -94,6 +94,8 @@ const NUM_SEATS = config.numSeats;
 const OSC_PORT = config.oscPort;
 const SERVER_PORT = config.serverPort;
 
+const NUMBER_OF_ROOMS = 2;
+
 // Middleware
 app.use(express.static('.'));
 app.use(express.json());
@@ -135,6 +137,8 @@ function initializeUserData() {
       baseline: {      
         status: Status.PENDING,
         startTime: null,
+        mode: GameMode.SOLO,
+        coplayers: [],
         data: {
           bpm: [],
           timestamp: []
@@ -142,6 +146,8 @@ function initializeUserData() {
       },
       room1: {
         status: Status.PENDING,
+        mode: GameMode.SOLO,
+        coplayers: [],
         startTime: null,
         data: {
           bpm: [],
@@ -150,22 +156,8 @@ function initializeUserData() {
       },
       room2: {
         status: Status.PENDING,
-        startTime: null,
-        data: {
-          bpm: [],
-          timestamp: []
-        }
-      },
-      room3: {
-        status: Status.PENDING,
-        startTime: null,
-        data: {
-          bpm: [],
-          timestamp: []
-        }
-      },
-      room4: {
-        status: Status.PENDING,
+        mode: GameMode.SOLO,
+        coplayers: [],
         startTime: null,
         data: {
           bpm: [],
@@ -188,7 +180,7 @@ function loadBpmDataFromFiles(userData) {
   // Loop through all sensors
   for (let i=1; i<=NUM_SEATS; i++) {
     // Loop through all rooms
-    for (let room=0; room<=2; room++) {
+    for (let room=0; room<=NUMBER_OF_ROOMS; room++) {
       const roomKey = room >0 ? `room${room}` : 'baseline';
       var filePath = path.join(__dirname, 'user', `${i}`, `stage_${room}.txt`);
 
@@ -305,6 +297,11 @@ const Status = Object.freeze({
   SAVED: "SAVED"
 });
 
+const GameMode = Object.freeze({
+  SOLO: "SOLO",
+  MULTIPLAYER: "MULTIPLAYER"
+});
+
 ////
 // BPM DATA LOADING AT STARTUP
 ////
@@ -345,7 +342,7 @@ udpPort.on("message", (oscMsg, timeTag, info) => {
       
       var idStatus = -1;
       var roomKey = 'baseline';
-      for (let roomId=0; roomId<=4; roomId++) 
+      for (let roomId=0; roomId<=NUMBER_OF_ROOMS; roomId++) 
       {
         if (roomId>0) roomKey = `room${roomId}`;
 
@@ -494,8 +491,8 @@ app.get('/multiplayer/:roomId/:userId', (req, res) => {
     return;
   }
 
-  // Validate room ID (0-2)
-  if (roomId < 0 || roomId > 2) {
+  // Validate room ID (0-NUMBER_OF_ROOMS)
+  if (roomId < 0 || roomId > NUMBER_OF_ROOMS) {
     return res.status(400).json({ 
       success: false, 
       message: 'Invalid room ID' 
@@ -532,7 +529,7 @@ app.get('/room/:roomId/:userId', (req, res) => {
   // Also check if another room is recording
   var alreadyRecording = false;
   var roomRecording = null;
-  for (let i=1; i<=4; i++) {
+  for (let i=1; i<=NUMBER_OF_ROOMS; i++) {
     let key = `room${i}`
     if (i!=roomId && userData[userId][key].status == Status.RECORDING) {
       alreadyRecording = true;
@@ -641,6 +638,51 @@ app.get('/', (req, res) => {
   res.send(authHtml);
 });
 
+// Add co-players for multiplayer mode
+app.post('/api/add-co-player/:roomId/:userId', (req, res) => {
+  const { roomId, userId } = req.params;
+  const { coplayers } = req.body;
+
+  coplayers.push(parseInt(userId));
+
+  // Validate co-players exist
+   for (const player of coplayers) {
+    if (!userData[`${player}`]) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Invalid user' 
+      });
+    }
+  }
+
+  // Validate room ID (0-NUMBER_OF_ROOMS)
+  if (roomId < 0 || roomId > NUMBER_OF_ROOMS) {
+    return res.status(400).json({ 
+      success: false, 
+      message: 'Invalid room ID' 
+    });
+  }
+
+  // Get the room key based on roomId
+  const roomKey = roomId > 0 ? `room${roomId}` : 'baseline';
+
+  // Add coplayers
+  for (const player of coplayers) {
+    userData[`${player}`][roomKey].mode = GameMode.MULTIPLAYER;
+    userData[`${player}`][roomKey].coplayers = [];
+    for (const cop of coplayers) {
+      if (cop != player) {
+        userData[`${player}`][roomKey].coplayers.push(cop);
+      }
+    }
+  }
+
+  res.json({ 
+    success: true, 
+    message: 'Multiplayer enabled'
+  });
+});
+
 // Start recording for specified room
 app.post('/api/record/start/:userId/:roomId', (req, res) => {
   const { userId, roomId } = req.params;
@@ -655,8 +697,8 @@ app.post('/api/record/start/:userId/:roomId', (req, res) => {
     res.status(404).send(errorHtml);
   }
 
-  // Validate room ID (0-2)
-  if (roomId < 0 || roomId > 2) {
+  // Validate room ID (0-NUMBER_OF_ROOMS)
+  if (roomId < 0 || roomId > NUMBER_OF_ROOMS) {
     return res.status(400).json({ 
       success: false, 
       message: 'Invalid room ID' 
@@ -678,13 +720,33 @@ app.post('/api/record/start/:userId/:roomId', (req, res) => {
   userData[userId][roomKey].status = Status.RECORDING;
   userData[userId][roomKey].startTime = Date.now();
   // If another room was recording set it to SAVED
-  for (let i=1; i<=4; i++) {
+  for (let i=1; i<=NUMBER_OF_ROOMS; i++) {
     if (i!=roomId) {
       const key = `room${i}`;
       if (userData[userId][key].status == Status.RECORDING) {
         userData[userId][key].status = Status.SAVED;
         userData[userId][key].startTime = null;
       }
+    }
+  }
+
+  // Handle multiplayer mode
+  if (userData[userId][roomKey].mode == GameMode.MULTIPLAYER) {
+
+    for (const player of userData[userId][roomKey].coplayers) {
+      userData[`${player}`][roomKey].status = Status.RECORDING;
+      userData[`${player}`][roomKey].startTime = Date.now();
+      // If another room was recording set it to SAVED --> Maybe should raise an error
+      for (let i=1; i<=NUMBER_OF_ROOMS; i++) {
+        if (i!=roomId) {
+          const key = `room${i}`;
+          if (userData[`${player}`][key].status == Status.RECORDING) {
+            userData[`${player}`][key].status = Status.SAVED;
+            userData[`${player}`][key].startTime = null;
+          }
+        }
+      }
+
     }
   }
 
@@ -709,8 +771,8 @@ app.post('/api/record/stop/:userId/:roomId', (req, res) => {
     res.status(404).send(errorHtml);
   }
 
-  // Validate room ID (0-2)
-  if (roomId < 0 || roomId > 2) {
+  // Validate room ID (0-NUMBER_OF_ROOMS)
+  if (roomId < 0 || roomId > NUMBER_OF_ROOMS) {
     return res.status(400).json({ 
       success: false, 
       message: 'Invalid room ID' 
@@ -731,14 +793,24 @@ app.post('/api/record/stop/:userId/:roomId', (req, res) => {
   // Set status to SAVED
   userData[userId][roomKey].status = Status.SAVED;
   userData[userId][roomKey].startTime = null;
-
   // Write stop in file to be sure it finished recording
   stopRecordingInFile(userId, roomId);
+
+  // Handle multiplayer mode
+  if (userData[userId][roomKey].mode == GameMode.MULTIPLAYER) {
+    for (const player of userData[userId][roomKey].coplayers) {
+      // Set status to SAVED
+      userData[`${player}`][roomKey].status = Status.SAVED;
+      userData[`${player}`][roomKey].startTime = null;
+      // Write stop in file to be sure it finished recording
+      stopRecordingInFile(player, roomId);
+    }
+  }
 
   res.json({ 
     success: true, 
     message: 'Recording stopped',
-    status: Status.RECORDING
+    status: Status.SAVED
   });
 });
 
@@ -756,8 +828,8 @@ app.post('/api/record/cancel/:userId/:roomId', (req, res) => {
     res.status(404).send(errorHtml);
   }
 
-  // Validate room ID (0-2)
-  if (roomId < 0 || roomId > 2) {
+  // Validate room ID (0-NUMBER_OF_ROOMS)
+  if (roomId < 0 || roomId > NUMBER_OF_ROOMS) {
     return res.status(400).json({ 
       success: false, 
       message: 'Invalid room ID' 
@@ -784,6 +856,20 @@ app.post('/api/record/cancel/:userId/:roomId', (req, res) => {
   // Delete files
   deleteUserFile(userId, roomId);
 
+  // Handle multiplayer mode
+  if (userData[userId][roomKey].mode == GameMode.MULTIPLAYER) {
+    for (const player of userData[userId][roomKey].coplayers) {
+      // Set status to PENDING
+      userData[`${player}`][roomKey].status = Status.PENDING;
+      userData[`${player}`][roomKey].startTime = null;
+      // Reset data in dict
+      userData[`${player}`][roomKey].data.bpm = [];
+      userData[`${player}`][roomKey].data.timestamp = [];
+      // Delete files
+      deleteUserFile(player, roomId);
+    }
+  }
+
   res.json({ 
     success: true, 
     message: 'Recording cancelled',
@@ -805,7 +891,7 @@ app.post('/api/registration/new/:userId', (req, res) => {
     res.status(404).send(errorHtml);
   }
 
-  for (let roomId = 0; roomId <= 2; roomId++) {
+  for (let roomId = 0; roomId <= NUMBER_OF_ROOMS; roomId++) {
     // Get the room key based on roomId
     const roomKey = roomId > 0 ? `room${roomId}` : 'baseline';
 

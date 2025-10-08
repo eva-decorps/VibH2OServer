@@ -211,7 +211,6 @@
       if (playerIds.length === 0) {
         const errorMessage = document.getElementById('errorMessage');
         errorMessage.style.display = 'block';
-        
         return;
       }
       
@@ -220,7 +219,31 @@
       
       // Construire l'URL avec les IDs des joueurs
       const playerIdsParam = playerIds.join(',');
-      window.location.href = `/info-panel/karaoke-multi/${userId}?players=${playerIdsParam}`;
+      
+      fetch(`/api/add-co-player/${roomId}/${userId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          coplayers: playerIds  // variable length array (1–4 players)
+        })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          window.location.href = `/info-panel/karaoke-multi/${userId}`;
+        } else {
+          const errorMessage = document.getElementById('errorMessage');
+          errorMessage.innerText = 'Un des identifiants est invalide';
+          errorMessage.style.display = 'block';
+        }
+      })
+      .catch(error => {
+        console.error('Erreur lors de la requête:', error);
+        const errorMessage = document.getElementById('errorMessage');
+        errorMessage.innerText = 'Une erreur est survenue.';
+        errorMessage.style.display = 'block';
+      });
+
     }
 
   </script>
