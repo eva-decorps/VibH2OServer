@@ -416,15 +416,27 @@ app.get('/api/bpm/:userId/:roomId', (req, res) => {
   const { userId, roomId } = req.params;
   const roomKey = `room${roomId}`;
 
+  let profiles = [`${userId}`];
+  let bpmData = [userData[userId][roomKey].data.bpm];
+  let time = userData[userId][roomKey].data.timestamp;
+  let multiplayer = userData[userId][roomKey].mode == GameMode.MULTIPLAYER;
+
+  if (multiplayer) {
+    for (const player of userData[userId][roomKey].coplayers) {
+      bpmData.push(userData[player][roomKey].data.bpm);
+      profiles.push(`${player}`);
+    }
+  }
+
   // Check data exists
-  
   if (userData[userId]) {
     res.json({
       success: true,
+      multiplayer: multiplayer,
       userId: userId,
-      profile: `User ${userId}`,
-      bpmData: userData[userId][roomKey].data.bpm,
-      time: userData[userId][roomKey].data.timestamp
+      profile: profiles,
+      bpmData: bpmData,
+      time: time
     });
   } else {
     res.status(404).json({ success: false, message: 'Data not found' });

@@ -276,7 +276,6 @@
     } else if (roomId == 1) {
       roomTitle.innerHTML = "Karaoké";
     } else if (roomId == 2) {
-      console.log("hey")
       roomTitle.innerHTML = "Fresque des émotions";
     }
 
@@ -293,10 +292,11 @@
             currentData = {
               bpmData: data.bpmData,
               time: data.time,
-              profile: data.profile
+              profile: data.profile,
+              mode: data.mode
             };
-            updateChart(data.bpmData, data.time, data.profile);
-            updateStats(data.bpmData, data.time);
+            updateChart();
+            updateStats(data.bpmData[0], data.time);
           }
         })
         .catch(error => console.error('Erreur BPM:', error));
@@ -335,39 +335,61 @@
       }
     }
 
-    function updateChart(bpmData, time, profileName) {
+    // Var for chart
+    var datasets;
+    var labels;
+    var yMaxBound;
+    var yMinBound;
+
+    // Define color palette for multiple profiles
+    const colors = [
+      '#36A2EB', '#FF6384', '#4BC0C0', '#FF9F40', 
+      '#9966FF', '#FFCD56', '#C9CBCF', '#FF6B9D'
+    ];
+
+    function createDatasets() {
+      
       // Convert timestamps in relative time with format hour:min
+      const time = currentData.time;
+      
       const startTime = time[0];
-      const labels = time.map(timestamp => {
+      
+      labels = time.map(timestamp => {
         const elapsedSeconds = (timestamp - startTime)/1000;
         const minutes = Math.floor(elapsedSeconds / 60);
         const seconds = Math.floor(elapsedSeconds % 60);
       
         return minutes.toString().padStart(2, '0') + ':' + seconds.toString().padStart(2, '0');
       });
+
+      // Collect all BPM values from all datasets to define y bounds
+      const allBpmValues = [];
+      currentData.bpmData.forEach(bpmArray => {
+        allBpmValues.push(...bpmArray.filter(val => val !== null));
+      });
       
-      // Define y bounds
-      const allBpmValues = [...bpmData].filter(val => val !== null);
       const minBpm = Math.min(...allBpmValues);
       const maxBpm = Math.max(...allBpmValues);
 
-      const yMinBound = Math.floor( (minBpm - (maxBpm-minBpm)*0.2) / 10 ) * 10;  
-      const yMaxBound = Math.ceil( (maxBpm + (maxBpm-minBpm)*0.2) / 10 ) * 10; 
+      yMinBound = Math.floor( (minBpm - (maxBpm-minBpm)*0.2) / 10 ) * 10;  
+      yMaxBound = Math.ceil( (maxBpm + (maxBpm-minBpm)*0.2) / 10 ) * 10; 
 
-      console.log(bpmData);
+      // Create a dataset for each profile
+      datasets = currentData.bpmData.map((bpmArray, index) => ({
+        label: currentData.profile[index],
+        data: bpmArray,
+        borderColor: colors[index % colors.length],
+        borderWidth: 2,
+        radius: 0,
+        tension: 0.2,
+        pointHoverRadius: 5
+      }));
 
-      // Define datasets
-      const datasets = [
-        {
-          label: profileName,
-          data: bpmData,
-          borderColor: '#36A2EB',
-          borderWidth: 2,
-          radius: 0,
-          tension: 0.2,
-          pointHoverRadius: 5
-        }
-      ];
+    }
+
+    function updateChart() {
+      // Create datasets for chart
+      createDatasets();
 
       // Make sure no chart is already here
       if (chart) {
@@ -459,7 +481,7 @@
 
       // Create fullscreen chart
       setTimeout(() => {
-        createFullscreenChart(currentData.bpmData, currentData.time, currentData.profile);
+        createFullscreenChart();
       }, 100);
     }
 
@@ -479,37 +501,9 @@
       }
     }
 
-    function createFullscreenChart(bpmData, time, profileName) {
-      // Convert timestamps in relative time with format hour:min
-      const startTime = time[0];
-      const labels = time.map(timestamp => {
-        const elapsedSeconds = (timestamp - startTime)/1000;
-        const minutes = Math.floor(elapsedSeconds / 60);
-        const seconds = Math.floor(elapsedSeconds % 60);
-      
-        return minutes.toString().padStart(2, '0') + ':' + seconds.toString().padStart(2, '0');
-      });
-      
-      // Define y bounds
-      const allBpmValues = [...bpmData].filter(val => val !== null);
-      const minBpm = Math.min(...allBpmValues);
-      const maxBpm = Math.max(...allBpmValues);
-
-      const yMinBound = Math.floor( (minBpm - (maxBpm-minBpm)*0.2) / 10 ) * 10;  
-      const yMaxBound = Math.ceil( (maxBpm + (maxBpm-minBpm)*0.2) / 10 ) * 10; 
-
-      // Define datasets
-      const datasets = [
-        {
-          label: profileName,
-          data: bpmData,
-          borderColor: '#36A2EB',
-          borderWidth: 3,
-          radius: 0,
-          tension: 0.2,
-          pointHoverRadius: 6
-        }
-      ];
+    function createFullscreenChart() {
+      // Create datasets for chart
+      createDatasets();
 
       // Destroy existing fullscreen chart if any
       if (fullscreenChart) {
