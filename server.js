@@ -7,7 +7,7 @@ const app = express();
 const PORT = 3000;
 
 // Middleware
-app.use(express.static('public'));
+app.use(express.static('.'));
 app.use(express.json());
 
 ////
