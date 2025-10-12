@@ -1,19 +1,54 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-  <title>Error - BPM</title>
+  <title>Error - Emotional Map</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="/shared-styles.css">
+  
   <style>
-    body { font-family: Arial, sans-serif; background: #f0f0f0; padding: 20px; text-align: center; }
-    .container { background: white; padding: 30px; border-radius: 10px; max-width: 500px; margin: auto; }
-    .error { color: #721c24; background: #f8d7da; padding: 15px; border-radius: 5px; }
+
+    .error-message {
+      background: #f8d7da;
+      color: #721c24;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 20px 0;
+      font-weight: bold;
+    }
+
+    .back-link {
+      display: inline-block;
+      margin-top: 20px;
+      padding: 12px 20px;
+      background: #3e7552;
+      color: white;
+      text-decoration: none;
+      border-radius: 6px;
+      font-size: 16px;
+      transition: background-color 0.3s;
+    }
+
+    .back-link:hover {
+      background: #2d5a3e;
+    }
+
   </style>
 </head>
+
 <body>
-  <div class="container">
-    <h2>❌ User not found</h2>
-    <div class="error">The id "{{userId}}" does not exist.</div>
-    <p>Valid ids within 1 and {{numSeats}}</p>
-    <a href="/">← Back to login</a>
+  <div class="error-container">
+    <h1>Corps connectés</h1>
+    
+    <div class="error-message">
+      L'identifiant {{userId}} n'existe pas.
+    </div>
+    
+    <div class="info">
+      <strong>Saisissez le numéro inscrit sur votre carte pour accéder à vos données ! </strong> (entre 1 et {{numSeats}})
+    </div>
+    
+    <a href="/" class="back-link">← Retour à l'authentification</a>
   </div>
 </body>
 </html>

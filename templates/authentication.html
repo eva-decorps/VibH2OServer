@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Emotional Map - Authentication</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="/shared-styles.css">
+</head>
+
+<body>
+  <div class="auth-container">
+    <h1>Corps connectés</h1>
+    
+    <div class="info">
+      <strong>Important :</strong> Saisissez le numéro inscrit sur votre carte pour visualiser vos données ! <br>
+    </div>
+
+    <input type="text" id="userIdInput" placeholder="Identifiant (de 1 à {{numSeats}})" />
+    <button class="btn-primary" onclick="authenticateUser()">Se connecter</button>
+    <div id="authStatus"></div>
+  </div>
+
+  <script>
+    function authenticateUser() {
+      // Go to authentication
+      let userId = document.getElementById('userIdInput').value.trim();
+      window.location.href = `/auth/${userId}`;
+    }
+
+    // Allow Enter key to submit
+    document.getElementById('userIdInput').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        authenticateUser();
+      }
+    });
+  </script>
+</body>
+</html>

@@ -3,202 +3,174 @@
 
 <head>
   
-  <title>Emotional Map</title>  
+  <title>Emotional Map</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="/lib/chart.min.js"></script>
   <script src="/lib/chartjs-plugin-annotation.min.js"></script>
+  <link rel="stylesheet" href="/shared-styles.css">
   
   <style>
 
-    html, body {
-      margin: 0;
-      padding-left: 20px;
-      padding-right: 20px;
-      height: 100%;
-      font-family: Arial, sans-serif;
-      background: #0d142b;
-      color: #e0e6f0;
+    /* Header Section */
+    .header-section {
+      text-align: center;
+      flex: 1;
     }
 
-    .container {
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-      box-sizing: border-box;
+    .subtitle {
+      font-size: 1rem;
+      color: #a0a6c0;
+      margin: 10px 10px 0 0;
+      opacity: 0.9;
     }
 
-    h1 {
-      margin: 0;
-      padding: 20px;
-    }
-
-    #mainSection {
-      display: flex;
-      flex-direction: column;
-      flex-grow: 1;
-      /*overflow: hidden; /* pour éviter les scrolls inutiles */
-    }
-
-    .auth-section, .info, .status {
-      margin-bottom: 20px;
-      background: #e8f4fd;
-      border-radius: 8px;
-      padding: 15px;
+    /* Chart Section */
+    .chart-section {
+      flex: 1;
+      min-height: 400px;
+      margin-bottom: 10px;
     }
 
     .chart-container {
-      flex-grow: 1;
-      overflow: hidden;
-      border-radius: 12px;
-      margin-bottom: 20px;
-      min-height: 0;
-    }
-
-    canvas {
-      width: 100% !important;
-      height: 100% !important;
-    }
-
-    button {
-      padding: 10px 20px;
-      margin: 5px;
-      border: none;
-      border-radius: 5px;
+      height: 400px;
+      position: relative;
       cursor: pointer;
-      flex-shrink: 0; 
+      transition: opacity 0.2s ease;
+    } 
+
+    .chart-container:hover {
+      opacity: 0.9;
     }
 
-    .header-bar {
+    /* Fullscreen Graph Styles */
+    .fullscreen-overlay {
+      display: none;
+      position: fixed;
+      border-radius: 20px;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #1a1d2e;
+      z-index: 1000;
+      flex-direction: column;
+    }
+
+    .fullscreen-overlay.active {
       display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 20px;
     }
 
+    .fullscreen-close {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      width: 40px;
+      height: 40px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      cursor: pointer;
+      z-index: 1001;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s ease;
+    }
 
-    .btn-primary { background: #3e7552; color: white; }
-    .btn-success { background: #5b232f; color: white; }
-    .success { background: #d4edda; color: #155724; }
-    .error { background: #f8d7da; color: #721c24; }
-    .info { background: #d1ecf1; color: #0c5460; }
+    .fullscreen-close:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: scale(1.1);
+    }
+
+    .fullscreen-close::before,
+    .fullscreen-close::after {
+      content: '';
+      position: absolute;
+      width: 20px;
+      height: 2px;
+      background: #e0e6f0;
+    }
+
+    .fullscreen-close::before {
+      transform: rotate(45deg);
+    }
+
+    .fullscreen-close::after {
+      transform: rotate(-45deg);
+    }
+
+    .fullscreen-chart-container {
+      width: 100%;
+      height: 100%;
+      padding: 60px 80px 25px 55px;
+      transform: rotate(90deg);
+      transform-origin: center center;
+    }
+
+    /* Adjust container for rotated content */
+    @media screen and (orientation: portrait) {
+      .fullscreen-chart-container {
+        width: 100vh;
+        height: 100vw;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) rotate(90deg);
+      }
+    }
 
   </style>
-
 
 </head>
 
  
 <body>
   <div class="container">
-    
-    <div class="header-bar">
-      <h1>🫀 Emotional Map</h1>
-      
-      <div id="logoutButton" style="display: none;">
-        <button class="btn-success" onclick="logout()">Logout</button>
-      </div>
+
+    <!-- Header Section -->
+    <div class="header-section">
+      <h1>Corps connectés</h1>
+
+      <p class="subtitle">Cliquez sur le graphique pour l'aggrandir</p>
     </div>
 
-    <!-- Section d'authentification -->
-    <div id="authSection" style="display:{{authSectionDisplay}};">
-
-      <h3>Authentification</h3>
-      <div class="info">
-        <strong>Configuration:</strong> {{numSeats}} Valid ids from 1 to {{numSeats}}
-      </div>
-
-      <input type="text" id="userIdInput" placeholder="Id (1 to {{numSeats}})" />
-      <button class="btn-primary" onclick="authenticateUser()">Login</button>
-      <div id="authStatus"></div>
-
-    </div> 
-
-    <!-- Section principale -->
-    <div id="mainSection" style="display:{{mainSectionDisplay}};">
-
-      <div class="chart-container">
+    <!-- Chart Section -->
+    <div class="chart-section">
+      <div class="chart-container" onclick="openFullscreen()">
         <canvas id="bpmChart"></canvas>
       </div>
-
     </div>
+
+    <!-- Fullscreen Graph Overlay -->
+    <div class="fullscreen-overlay" id="fullscreenOverlay">
+      <div class="fullscreen-close" onclick="closeFullscreen()"></div>
+      <div class="fullscreen-chart-container">
+        <canvas id="bpmChartFullscreen"></canvas>
+      </div>
+    </div>
+
+    <!-- Back Button -->
+    <button class="exit-button" onclick="logout()">Retour</button>
+    
   </div>
 
   <script>
     let chart = null;
-    let currentUser = '{{autoAuth}}' === 'true' ? '{{userId}}' : null;
-
-    const validUsers = [{{validUsersString}}];
-    const autoAuth = '{{autoAuth}}' === 'true';
-    const presetUserId = '{{userId}}';
+    let fullscreenChart = null;
+    let currentUser = '{{userId}}';
+    let currentData = null; // Store current chart data
 
     // Automatic authentification when authentication via link
     window.onload = function() {
-      if (autoAuth && presetUserId) {
-        authenticateUserAuto(presetUserId);
+      if (currentUser) {
+        loadBpmData(currentUser);
+      } else {
+        // Redirect to authentication if no user
+        window.location.href = '/';
       }
     };
 
-    function authenticateUserAuto(userId) {
-      fetch(`/api/auth/${userId}`)
-        .then(response => response.json())
-        .then(data => {
-          if (data.success) {
-            currentUser = userId;
-            showMainSection();
-            loadBpmData(userId);
-          } else {
-            console.error('Échec authentification automatique');
-          }
-        })
-        .catch(error => {
-          console.error('Erreur authentification automatique:', error);
-        });
-    }
-
-    function authenticateUser() {
-
-      let userId = document.getElementById('userIdInput').value.trim();
-      const statusDiv = document.getElementById('authStatus');
-
-      if (!validUsers.includes(userId)) {
-        statusDiv.innerHTML = '<div class="status error">❌ Invalid id. Valid ids within 1 and {{numSeats}}.</div>';
-        return;
-      }
-
-      fetch(`/api/auth/${userId}`)
-        .then(response => response.json())
-        .then(data => {
-          if (data.success) {
-            statusDiv.innerHTML = `<div class="status success">✅ Authentifié: ${data.profile}</div>`;
-            currentUser = userId;
-            showMainSection();
-            loadBpmData(userId);
-          } else {
-            statusDiv.innerHTML = '<div class="status error">❌ Échec authentification</div>';
-          }
-        })
-        .catch(error => {
-          console.error('Erreur:', error);
-          statusDiv.innerHTML = '<div class="status error">❌ Erreur réseau</div>';
-        });
-    }
-
-    function showMainSection() {
-      document.getElementById('authSection').style.display = 'none';
-      document.getElementById('mainSection').style.display = 'block';
-      document.getElementById('logoutButton').style.display = 'block';
-    }
-
     function logout() {
-      // Reset values
-      currentUser = null;
-      if(chart) {
-        chart.destroy();
-        chart = null;
-      }
-      document.getElementById('authStatus').innerHTML = '';
-      document.getElementById('userIdInput').value = '';
-      document.getElementById('logoutButton').style.display = 'none';
-
       // Redirect toward authentication page
       window.location.href = '/';
     }
@@ -208,17 +180,39 @@
         .then(response => response.json())
         .then(data => {
           if (data.success) {
-            updateChart(data.bpmData, data.time, data.profile, data.avg, data.avgTime, data.landmarks);
+            // Store data for fullscreen use
+            currentData = {
+              bpmData: data.bpmData,
+              time: data.time,
+              profile: data.profile,
+              avgBpm: data.avg,
+              landmarks: data.landmarks
+            };
+            updateChart();
           }
         })
         .catch(error => console.error('Erreur BPM:', error));
     }
 
-    function updateChart(bpmData, time, profileName, avgBpm, avgTime, landmarks) {
+    // Var for chart
+    var datasets;
+    var labels;
+    var yMaxBound;
+    var yMinBound;
+    var annotation;
+    var animation;
 
+    function createDatasets() {
+
+      const time = currentData.time;
+      const bpmData = currentData.bpmData;
+      const avgBpm = currentData.avgBpm;
+      const landmarks = currentData.landmarks;
+      const profileName = currentData.profile;
+      
       // Convert timestamps in relative time with format hour:min
       const startTime = time[0];
-      const labels = time.map(timestamp => {
+      labels = time.map(timestamp => {
         const elapsedSeconds = (timestamp - startTime)/1000;
         const hours = Math.floor(elapsedSeconds / 3600);
         const minutes = Math.floor((elapsedSeconds % 3600) / 60);
@@ -231,13 +225,13 @@
       const minBpm = Math.min(...allBpmValues);
       const maxBpm = Math.max(...allBpmValues);
 
-      const yMinBound = Math.floor( (minBpm - (maxBpm-minBpm)*0.2) / 10 ) * 10;  
-      const yMaxBound = Math.ceil( (maxBpm + (maxBpm-minBpm)*0.2) / 10 ) * 10; 
+      yMinBound = Math.floor( (minBpm - (maxBpm-minBpm)*0.2) / 10 ) * 10;  
+      yMaxBound = Math.ceil( (maxBpm + (maxBpm-minBpm)*0.2) / 10 ) * 10; 
 
       // Define datasets
-      const datasets = [
+      datasets = [
         {
-          label: 'Seat ' + profileName,
+          label: 'Capteur ' + profileName,
           data: bpmData,
           borderColor: '#36A2EB',
           borderWidth: 2,
@@ -246,7 +240,7 @@
           pointHoverRadius: 5
         },
         {
-          label: 'Audience average',
+          label: 'Moyenne du public',
           data: avgBpm,
           borderColor: '#dd7768',
           borderWidth: 2,
@@ -257,7 +251,7 @@
       ];
           
       // Create annotations for landmarks
-      const annotations = {};
+      annotations = {};
       landmarks.forEach((landmark, index) => {
         // Find the closest time index for this landmark
         const landmarkTime = landmark.timestamp;
@@ -291,9 +285,9 @@
 
       // Define animation
       const totalDuration = 5000;
-      const delayBetweenPoints = totalDuration / bpmData.length;
+      const delayBetweenPoints = totalDuration / currentData.bpmData.length;
       const previousY = (ctx) => ctx.index === 0 ? ctx.chart.scales.y.getPixelForValue(100) : ctx.chart.getDatasetMeta(ctx.datasetIndex).data[ctx.index - 1].getProps(['y'], true).y;
-      const animation = {
+      animation = {
         x: {
           type: 'number',
           easing: 'linear',
@@ -321,6 +315,11 @@
           }
         }
       };
+    }
+
+    function updateChart() {
+
+      createDatasets();
 
       // Make sure no chart is already here
       if (chart) {
@@ -328,6 +327,124 @@
       }
       
       chart = new Chart(document.getElementById('bpmChart').getContext('2d'), {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: datasets
+        },
+        options: {
+          //animation, // Doesn't work with annotations...
+          responsive: true,
+          maintainAspectRatio: false, 
+          plugins: {
+            legend: {
+              labels: {
+                color: '#737fa9',
+                font: {
+                  size: 15
+                },
+                padding: 20
+              }
+            },
+            annotation: {
+              annotations: annotations
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: false,
+              min: yMinBound,
+              max: yMaxBound,
+              title: {
+                display: true,
+                text: 'BPM',
+                color: '#737fa9',
+                font: {
+                  size: 17
+                }
+              },
+              ticks: {
+                color: '#737fa9',
+                font: {
+                  size: 15
+                }
+              },
+              grid: {
+                color: '#232734'
+              }
+            },
+            x: {
+              title: {
+                display: true,
+                text: 'Temps (h:min)',
+                color: '#737fa9',
+                font: {
+                  size: 17
+                }
+              },
+              ticks: {
+                maxTicksLimit: 10,
+                maxRotation: 45,
+                minRotation: 0,
+                color: '#737fa9',
+                font: {
+                  size: 15
+                }
+              },
+              grid: {
+                color: '#232734'
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function openFullscreen() {
+      if (!currentData) return;
+
+      const overlay = document.getElementById('fullscreenOverlay');
+      overlay.classList.add('active');
+
+      // Lock orientation to landscape on mobile devices
+      if (screen.orientation && screen.orientation.lock) {
+        screen.orientation.lock('landscape').catch(err => {
+          console.log('Orientation lock not supported:', err);
+        });
+      }
+
+      // Create fullscreen chart
+      setTimeout(() => {
+        createFullscreenChart();
+      }, 100);
+    }
+
+    function closeFullscreen() {
+      const overlay = document.getElementById('fullscreenOverlay');
+      overlay.classList.remove('active');
+
+      // Unlock orientation
+      if (screen.orientation && screen.orientation.unlock) {
+        screen.orientation.unlock();
+      }
+
+      // Destroy fullscreen chart
+      if (fullscreenChart) {
+        fullscreenChart.destroy();
+        fullscreenChart = null;
+      }
+    }
+
+    function createFullscreenChart() {
+      // Create datasets for chart
+      createDatasets();
+
+      // Destroy existing fullscreen chart if any
+      if (fullscreenChart) {
+        fullscreenChart.destroy();
+      }
+      
+      fullscreenChart = new Chart(document.getElementById('bpmChartFullscreen').getContext('2d'), {
         type: 'line',
         data: {
           labels: labels,
@@ -399,6 +516,7 @@
         }
       });
     }
+
   </script>
 
 </body>

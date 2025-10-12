@@ -224,6 +224,11 @@ const landmarks = loadLandmarks(avgBpm.time[0]);
 // ROUTES 
 ////
 
+// Handle CSS file requests
+app.get('/shared-styles.css', (req, res) => {
+  res.sendFile(path.join(__dirname, 'templates', 'shared-styles.css'));
+});
+
 // Get bpm data
 app.get('/api/bpm/:userId', (req, res) => {
   const { userId } = req.params;
@@ -288,20 +293,13 @@ app.get('/auth/:userId', (req, res) => {
 });
 
 // Main route
+// Main route goes to authentication page
 app.get('/', (req, res) => {
-  const validUsersArray = Object.keys(bpmData);
-  const validUsersString = validUsersArray.map(u => `'${u}'`).join(', ');
-    
-  const dashboardHtml = loadTemplate('dashboard', {
-    numSeats: NUM_SEATS,
-    validUsersString: validUsersString,
-    userId: '',
-    autoAuth: 'false',
-    authSectionDisplay: 'block',
-    mainSectionDisplay: 'none'
+  const authHtml = loadTemplate('authentication', {
+    numSeats: NUM_SEATS
   });
 
-  res.send(dashboardHtml);
+  res.send(authHtml);
 });
 
 // Server startup
