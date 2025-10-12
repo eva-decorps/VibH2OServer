@@ -1,5 +1,5 @@
-input_file = "tonfichier"
-output_file = "bpm_data.txt"
+input_file = "data/record-ales.txt"
+output_file = "data/bpm_data.txt"
 
 with open(input_file, 'r', encoding='utf-8') as infile, open(output_file, 'w', encoding='utf-8') as outfile:
     for line in infile:
