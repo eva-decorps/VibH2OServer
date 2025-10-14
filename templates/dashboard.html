@@ -100,14 +100,10 @@
     }
 
     .fullscreen-chart-container {
-      width: 100%;
-      height: 100%;
-      padding: 55px 80px 25px 55px;
-      transform: rotate(90deg);
-      transform-origin: center center;
+      transition: transform 0.3s ease;
     }
 
-    /* Adjust container for rotated content */
+    /* Portrait mode: rotate the container */
     @media screen and (orientation: portrait) {
       .fullscreen-chart-container {
         width: 100vh;
@@ -116,6 +112,29 @@
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%) rotate(90deg);
+        padding: 55px 80px 25px 55px;
+      }
+    }
+
+    /* Landscape mode: full width and height, no rotation */
+    @media screen and (orientation: landscape) {
+      .fullscreen-chart-container {
+        width: 100%;
+        height: 100%;
+        position: absolute;
+        top: 0;
+        left: 0;
+        transform: none;
+        padding: 80px 80px 40px 80px;
+        box-sizing: border-box;
+      }
+
+      .container {
+        width: 100%;
+        height: 100%;
+        transform: none;
+        padding: 20px 30px;
+        margin: 0;
       }
     }
 
@@ -406,7 +425,7 @@
       const overlay = document.getElementById('fullscreenOverlay');
       overlay.classList.add('active');
 
-      // Lock orientation to landscape on mobile devices
+      // Try to lock orientation to landscape on mobile devices
       if (screen.orientation && screen.orientation.lock) {
         screen.orientation.lock('landscape').catch(err => {
           console.log('Orientation lock not supported:', err);
@@ -417,6 +436,10 @@
       setTimeout(() => {
         createFullscreenChart();
       }, 100);
+
+      // Listen for orientation changes while in fullscreen
+      window.addEventListener('orientationchange', handleOrientationChange);
+      window.addEventListener('resize', handleOrientationChange);
     }
 
     function closeFullscreen() {
@@ -428,10 +451,23 @@
         screen.orientation.unlock();
       }
 
+      // Remove orientation change listeners
+      window.removeEventListener('orientationchange', handleOrientationChange);
+      window.removeEventListener('resize', handleOrientationChange);
+
       // Destroy fullscreen chart
       if (fullscreenChart) {
         fullscreenChart.destroy();
         fullscreenChart = null;
+      }
+    }
+
+    function handleOrientationChange() {
+      // Recreate the chart when orientation changes
+      if (fullscreenChart && currentData) {
+        setTimeout(() => {
+          createFullscreenChart();
+        }, 100);
       }
     }
 
@@ -453,6 +489,7 @@
         options: {
           //animation, // Doesn't work with annotations...
           responsive: true,
+          maintainAspectRatio: false,
           plugins: {
             legend: {
               labels: {
@@ -497,7 +534,7 @@
                 color: '#737fa9',
                 font: {
                   size: 17
-                }
+              }
               },
               ticks: {
                 maxTicksLimit: 10,
