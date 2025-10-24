@@ -14,7 +14,7 @@ const PORT = 3000;
 function parseCommandLineArgs() {
   const args = process.argv.slice(2);
   let numSeats = 10; // Default value
-  let oscPort = 8000; // Default OSC port
+  let oscPort = 9001; // Default OSC port
   let serverPort = 3000; // Default server port
 
   for (let i = 0; i < args.length; i++) {
@@ -316,14 +316,14 @@ loadBpmDataFromFiles(userData);
 
 // Create an OSC UDP Port on localhost, configured port
 const udpPort = new osc.UDPPort({
-  localAddress: "127.0.0.1", // should be an arg given at app startup
+  localAddress: "0.0.0.0",
   localPort: OSC_PORT,
   metadata: true
 });
 
 // Listen for OSC messages and store data
 udpPort.on("message", (oscMsg, timeTag, info) => {
-
+  
   const match = oscMsg.address.match(/^\/oh1\/(\d+)\/bpm$/);
   if (match) {
     const id = parseInt(match[1], 10);
