@@ -338,7 +338,7 @@
 
         if (roomId == 0) {
           statusText.textContent = `Enregistrement de la baseline en cours...
-          Appuyez sur stop une fois les 5 minutes passées.`;
+          Appuyez sur stop une fois les 3 minutes passées.`;
         } else if (roomId == 1) {
           statusText.textContent = `Enregistrement du karaoké en cours...
           Appuyez sur stop une fois le karaoké terminé.`;
@@ -375,7 +375,7 @@
 
         // Check the minimun time interval has been reached
         const elapsedMin = (Date.now() - startTime) / 60000;
-        if (roomId == 0 && elapsedMin < 5) 
+        if (roomId == 0 && elapsedMin < 3) 
         {
           statusText.textContent = `Enregistrement de la baseline en cours (5 min)...
           Encore un peu de patience !`;
@@ -491,7 +491,7 @@
         const seconds = Math.floor((elapsed % 60000) / 1000);
 
         // When minimum time is reached for baseline : beeps and vibrates
-        if (minutes == 5 && seconds == 0 && roomId == 0) {
+        if (minutes == 3 && seconds == 0 && roomId == 0) {
           buttonText.textContent = 'STOP'; 
           alertUser();
         }
