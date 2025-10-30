@@ -32,6 +32,7 @@
       text-align: center;
       font-size: 1.1rem;
       font-weight: normal;
+      display: none;
     }
 
     .input-row {
@@ -78,6 +79,7 @@
       color: #979ab5;
       margin-top: 0;
       margin-bottom: 0;
+      display: none;
     }
 
     /* Mobile responsiveness for inputs */
@@ -154,7 +156,11 @@
     <div class="mode-list">
       <button class="game-mode solo" onclick="soloMode()">Solo</button>
 
-      <p class="info">Seul une personne doit remplir cette section avec les identifiant des autres participant·es du Karaoké.
+      <p class="info">
+        Seule une personne doit remplir cette section avec les identifiant des autres participant·es du Karaoké.<br>
+         <br>
+        <strong>Vous n'avez pas besoin de remplir votre propre identifiant.</strong><br>
+         <br>
         Il ou elle pourra ensuite lancer l'enregistrement pour tout·es les participant·es. </p>
       
       <div class="player-inputs">
@@ -198,6 +204,14 @@
     }
 
     function multiMode() {
+      document.getElementsByClassName("game-mode solo")[0].style.display = 'none';
+      document.getElementsByClassName("player-inputs")[0].style.display = 'block';
+      document.getElementsByClassName("info")[0].style.display = 'block';
+      document.getElementsByClassName("game-mode multi")[0].innerText = 'Ajouter les joueur·euses';
+      document.getElementsByClassName("game-mode multi")[0].onclick = addPlayers;
+    }
+
+    function addPlayers() {
       // Récupérer les valeurs des champs
       const player1 = document.getElementById('player1').value.trim();
       const player2 = document.getElementById('player2').value.trim();
