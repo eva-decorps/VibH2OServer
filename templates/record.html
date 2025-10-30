@@ -116,11 +116,11 @@
     }
 
     .cancel-button {
-      background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+      background: linear-gradient(135deg, #d06241 0%, #da3434 100%);
     }
 
     .cancel-button:hover {
-      background: linear-gradient(135deg, #e67e22 0%, #f39c12 100%);
+      background: linear-gradient(135deg, #da3434 0%, #d06241 100%);
     }
 
     .next-button {
@@ -195,11 +195,11 @@
       </button>
 
       <div class="control-buttons" id="controlButtons">
-        <button class="action-button cancel-button" id="cancel-button" onclick="cancelRecording()">
-          Annuler
-        </button>
         <button class="action-button next-button" id="next-button" onclick="nextStep()">
           Enregistrer
+        </button>
+        <button class="action-button cancel-button" id="cancel-button" onclick="askCancel()">
+          Annuler
         </button>
       </div>
     </div>
@@ -433,14 +433,27 @@
       }
     }
 
+    function askCancel() {
+      statusText.textContent = 'Êtes-vous sûr·e de vouloir effacer le record ?';
+
+      const nextButton = document.getElementById('next-button');
+      const cancelButton = document.getElementById('cancel-button');
+
+      nextButton.innerText = 'Conserver le record';
+      cancelButton.innerText = 'Effacer le record';
+      cancelButton.onclick = cancelRecording;
+    }
+
     function cancelRecording() {
-      
       // Reset to initial state
       isRecording = false;
       startTime = null;
       recordingFinished = false;
       stopTimer();  
       init();
+
+      const cancelButton = document.getElementById('cancel-button');
+      cancelButton.innerText = 'Annuler';
 
       fetch(`/api/record/cancel/${userId}/${roomId}`, {
         method: 'POST',
