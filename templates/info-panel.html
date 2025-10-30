@@ -217,23 +217,97 @@
       <p>Cette expérience s’inspire des recherches sur la perception et la régulation des émotions : </p>
       <p>apprendre à reconnaître son état intérieur, puis à l’exprimer ou à le transformer à travers l’art, les techniques 
         de respiration, ou un geste symbolique.</p>`;
+
+  } else if (stage == 'cinema-missing-data') {
+
+    subtitle.innerHTML = `Cinéma`;
+    backBtn.style.display = 'block';
+    backBtn.innerText = 'Retour aux résultats';
+    nextBtn.innerText = `Aller sur l'installation`;
     
+    explanation.innerHTML = `
+      <p>Il semble que vous n'ayez pas enregistré votre bpm sur cette installation. </p>`;
+
+  } else if (stage == 'karaoke-missing-data') {
+
+    subtitle.innerHTML = `Karaoké`;
+    backBtn.style.display = 'block';
+    backBtn.innerText = 'Retour aux résultats';
+    nextBtn.innerText = `Aller sur l'installation`;
+
+    explanation.innerHTML = `
+      <p>Il semble que vous n'ayez pas enregistré votre bpm sur cette installation. </p>`;
+
+  } else if (stage == 'fresque-missing-data') {
+
+    subtitle.innerHTML = `Fresque des émotions`;
+    backBtn.style.display = 'block';
+    backBtn.innerText = 'Retour aux résultats';
+    nextBtn.innerText = `Aller sur l'installation`;
+    
+    explanation.innerHTML = `
+      <p>Il semble que vous n'ayez pas enregistré votre bpm sur cette installation. </p>`;
+    
+  } else if (stage == 'cinema-recorded') {
+
+    subtitle.innerHTML = `Cinéma`;
+    backBtn.style.display = 'block';
+    backBtn.innerText = `Effacer et recommencer`;
+    nextBtn.innerText = `Retour à l'acceuil`;
+
+    explanation.innerHTML = `
+      <p>L'enregistrement a déjà été effectué sur cette installation.</p>`;
+
+  } else if (stage == 'karaoke-recorded') {
+
+    subtitle.innerHTML = `Karaoké`;
+    backBtn.style.display = 'block';
+    backBtn.innerText = `Effacer et recommencer`;
+    nextBtn.innerText = `Retour à l'acceuil`;
+
+    explanation.innerHTML = `
+      <p>L'enregistrement a déjà été effectué sur cette installation.</p>`;
+
+  } else if (stage == 'fresque-recorded') {
+
+    subtitle.innerHTML = `Fresque des émotions`;
+    backBtn.style.display = 'block';
+    backBtn.innerText = `Effacer et recommencer`;
+    nextBtn.innerText = `Retour à l'acceuil`;
+
+    explanation.innerHTML = `
+      <p>L'enregistrement a déjà été effectué sur cette installation.</p>`;
+
   } else if (stage == 'exit1') {
+  
+    subtitle.innerText = `Accéder aux résultats`;
+    nextBtn.innerText = 'Voir mes données';
+    backBtn.style.display = 'block';
+
+    explanation.innerHTML = `
+      <p> Vous pouvez maintenant accéder à vos données sur les installations sur lesquelles vous avez enregistrer 
+        votre rythme cardiaque.</p>
+      <p>Pensez à prendre une capture d'écran de vos émotions. Vous ne pourrez plus visualiser vos résultats après 
+        avoir terminé.</p>`;
+  
+  } else if (stage == 'exit2') {
 
     subtitle.innerText = `Finir l'expérience`;
     nextBtn.innerText = 'Terminer';
     backBtn.style.display = 'block';
 
     explanation.innerHTML = `
-      <p>Avez-vous pris une capture d'écran de vos émotions ? Vous ne pourrez plus visualiser vos résultats après avoir terminé.</p>`;
+      <p>Avez-vous pris une capture d'écran de vos émotions ? Vous ne pourrez plus visualiser vos résultats après avoir 
+        terminé.</p>`;
 
-  } else if (stage == 'exit2') {
+  } else if (stage == 'exit3') {
 
     subtitle.style.display = 'none';
     nextBtn.style.display = 'none';
 
     explanation.innerHTML = `
       <p>N'oubliez pas de rendre votre bracelet à la personne avec un t-shirt blanc avec un pastille noire à la sortie !</p>
+      <p>Vous pouvez maintenant vous déconnecter du réseau et réactiver vos données mobiles.</p>
       <p>Merci pour votre participation.</p>`;
   }
 
@@ -272,9 +346,23 @@
       } else if (stage == 'result') {
         window.location.href = `/room-selection/${userId}`;
       } else if (stage == 'exit1') {
-        window.location.href = `/info-panel/exit2/${userId}`;
+        window.location.href = `/room-selection/results/${userId}`;     
       } else if (stage == 'exit2') {
+        window.location.href = `/info-panel/exit3/${userId}`;
+      } else if (stage == 'exit3') {
         window.location.href = '/';
+      } else if (stage == 'cinema-missing-data') {
+        window.location.href = `/info-panel/baseline/${userId}`;
+      } else if (stage == 'karaoke-missing-data') {
+        window.location.href = `/info-panel/karaoke/${userId}`;
+      } else if (stage == 'fresque-missing-data') {
+        window.location.href = `/info-panel/fresque1/${userId}`;
+      } else if (stage == 'cinema-recorded') {
+        window.location.href = `/room-selection/${userId}`;
+      } else if (stage == 'karaoke-recorded') {
+        window.location.href = `/room-selection/${userId}`;
+      } else if (stage == 'fresque-recorded') {
+        window.location.href = `/room-selection/${userId}`;
       } else {
         window.location.href = '/';
       }
@@ -283,15 +371,35 @@
   });
 
   backBtn.addEventListener("click", (e) => {
-    // Add visual feedback
-    nextBtn.style.transform = "scale(0.95)";
-    setTimeout(() => {
-      nextBtn.style.transform = "";
-    }, 150);
-    // Redirect toward right page
-    setTimeout(() => {
-      window.location.href = `/room-selection/${userId}`;
-    }, 200);
+    
+    if (stage == 'cinema-recorded') {
+      fetch(`/api/record/cancel/${userId}/${0}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+      window.location.href = `/info-panel/baseline/${userId}`;
+    } else if (stage == 'karaoke-recorded') {
+      fetch(`/api/record/cancel/${userId}/${1}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+      window.location.href = `/info-panel/karaoke/${userId}`;
+    } else if (stage == 'fresque-recorded') {
+      fetch(`/api/record/cancel/${userId}/${2}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+      window.location.href = `/info-panel/fresque1/${userId}`;  
+    } else {
+      window.location.href = `/room-selection/results/${userId}`;
+    }
+    
   });
 
   // Add touch feedback for better mobile experience

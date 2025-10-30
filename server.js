@@ -648,7 +648,33 @@ app.get('/room-selection/:userId', (req, res) => {
   const roomSelectionHtml = loadTemplate('room-selection', {
     userId: userId,
     showRoom1Info: (userData[userId].room1.status == Status.PENDING),
-    showRoom2Info: (userData[userId].room2.status == Status.PENDING)
+    showRoom2Info: (userData[userId].room2.status == Status.PENDING),
+    showResults: false
+  });
+
+  res.send(roomSelectionHtml);
+});
+
+// Room selection for resutl
+app.get('/room-selection/results/:userId', (req, res) => {
+  const { userId } = req.params;
+  
+  // Validate user exists
+  if (!userData[userId]) {
+    const errorHtml = loadTemplate('error', {
+      userId: userId,
+      numSeats: NUM_SEATS
+    });
+    res.status(404).send(errorHtml);
+    return;
+  }
+
+  // To now if we need to display the info panel
+  const roomSelectionHtml = loadTemplate('room-selection', {
+    userId: userId,
+    showRoom1Info: false,
+    showRoom2Info: false,
+    showResults: true
   });
 
   res.send(roomSelectionHtml);
@@ -738,14 +764,82 @@ app.get('/room/:roomId/:userId', (req, res) => {
 
     res.send(recordHtml);
   } else if (roomStatus == Status.SAVED) {
+    // Already recorded
+    var stage;
+    if (roomId == 0) { stage = 'cinema-recorded'; }
+    else if (roomId == 1) { stage = 'karaoke-recorded'; }
+    else if (roomId == 2) { stage = 'fresque-recorded'; }
+
+    const infoPanelHtml = loadTemplate('info-panel', {
+      userId: userId,
+      stage: stage
+    });
+
+    res.send(infoPanelHtml);
+  }
+});
+
+// Get the right graph for the room and user
+app.get('/room/result/:roomId/:userId', (req, res) => {
+  const { roomId, userId } = req.params;
+
+  // If user doesn't exist throw error
+  if (!userData[userId]) {
+    const errorHtml = loadTemplate('error', {
+      userId: userId,
+      numSeats: NUM_SEATS
+    });
+
+    res.status(404).send(errorHtml);
+    return;
+  }
+
+  // If user exist check room status
+  const roomKey = roomId >0 ? `room${roomId}` : 'baseline';
+  const roomStatus = userData[userId][roomKey].status;
+
+  if (roomStatus== Status.PENDING) {
+    // Error message : no data recorded
+    var stage;
+    if (roomId == 0) { stage = 'cinema-missing-data'; }
+    else if (roomId == 1) { stage = 'karaoke-missing-data'; }
+    else if (roomId == 2) { stage = 'fresque-missing-data'; }
+
+    const infoPanelHtml = loadTemplate('info-panel', {
+      userId: userId,
+      stage: stage
+    });
+
+    res.send(infoPanelHtml);
+  } else if (roomStatus == Status.RECORDING) {
+    // Stop the recording
+    // Set status to SAVED
+    userData[userId][roomKey].status = Status.SAVED;
+    userData[userId][roomKey].startTime = null;
+    // Write stop in file to be sure it finished recording
+    stopRecordingInFile(userId, roomId);
+
+    // Show results
     const dashboardHtml = loadTemplate('dashboard', {
       userId: userId,
       roomId: roomId,
-      autoAuth: 'true'
+      autoAuth: 'true',
+      result: true
+    });
+
+    res.send(dashboardHtml);
+  } else if (roomStatus == Status.SAVED) {
+    const dashboardHtml = loadTemplate('dashboard', {
+      userId: userId,
+      roomId: roomId,
+      autoAuth: 'true',
+      result: true
     });
 
     res.send(dashboardHtml);
   }
+
+
 });
 
 // Authentication route
