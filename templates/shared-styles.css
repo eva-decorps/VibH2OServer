@@ -134,6 +134,14 @@ input[type="text"]:focus {
   color: #721c24;
 }
 
+/* Sensor number */
+.sensor-info {
+  font-size: 1rem;
+  color: #83869f;
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
 /* Common info box */
 .info {
   margin: 20px 0;

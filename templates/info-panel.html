@@ -61,6 +61,7 @@
   <div class="container">
 
     <h1>Corps connectés</h1>
+    <div class="sensor-info">Capteur <class id="sensor-number">001</class></div>
     <h2> <p class="subtitle"> Oups </p> </h2>
     <h3> <p class="timing"> </p> </h3>
     
@@ -86,6 +87,9 @@
   // Get user id and stage to now what to display and to which page next button redirects
   const userId = {{userId}};
   const stage = "{{stage}}";
+
+  // Set the sensor number
+  document.getElementById("sensor-number").textContent = userId;
 
   const subtitle = document.getElementsByClassName("subtitle")[0];
   const timing = document.getElementsByClassName("timing")[0];

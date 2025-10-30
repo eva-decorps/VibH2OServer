@@ -207,6 +207,7 @@
     <!-- Header Section -->
     <div class="header-section">
       <h1>Corps connectés</h1>
+      <div class="sensor-info">Capteur <class id="sensor-number">001</class></div>
       <p class="room-subtitle">Karaoké / Cinéma / ?</p>
     </div>
 
@@ -259,6 +260,9 @@
     let currentUser = '{{autoAuth}}' === 'true' ? '{{userId}}' : null;
     let roomId = '{{roomId}}';
     let currentData = null; // Store current chart data
+
+    // Set the sensor number
+    document.getElementById("sensor-number").textContent = currentUser;
 
     // Automatic authentification when authentication via link
     window.onload = function() {

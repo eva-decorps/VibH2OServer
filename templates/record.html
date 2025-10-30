@@ -183,6 +183,7 @@
   <div class="container">
     <div>
       <h1>Corps connectés</h1>
+      <div class="sensor-info">Capteur <class id="sensor-number">001</class></div>
       <div class="recording-indicator" id="recordingIndicator">● REC</div>
       <div class="status-text" id="statusText">Ready to record</div>
       <div class="timer-display" id="timerDisplay">00:00</div>
@@ -224,6 +225,9 @@
     const beepSound = new Audio('/ressources/beep-recording-end.mp3');
     let audioEnabled = false;
     let audioContext;
+
+    // Set the sensor number
+    document.getElementById("sensor-number").textContent = userId;
 
     // Mettre une fonction init ici : 
     function init() {

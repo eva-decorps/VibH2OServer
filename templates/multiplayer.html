@@ -149,6 +149,7 @@
 <body>
   <div class="container">
     <h1>Corps connectés</h1>
+    <div class="sensor-info">Capteur <class id="sensor-number">001</class></div>
 
     <div class="mode-list">
       <button class="game-mode solo" onclick="soloMode()">Solo</button>
@@ -184,6 +185,9 @@
 
     const userId = {{userId}};
     const roomId = {{roomId}};
+
+    // Set the sensor number
+    document.getElementById("sensor-number").textContent = userId;
 
     function backToSelection() {
        window.location.href = `/room-selection/${userId}`;

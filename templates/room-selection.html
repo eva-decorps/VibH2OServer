@@ -116,6 +116,7 @@
 <body>
   <div class="container">
     <h1>Corps connectés</h1>
+    <div class="sensor-info">Capteur <class id="sensor-number">001</class></div>
     <p class="subtitle">Trouvez une des installations marquée par une pastille bleue pour enregistrer puis visualiser vos données émotionnelles.</p>
 
     <div class="room-list">
@@ -133,6 +134,9 @@
     const userId = {{userId}};
     const showInfoRoom1 = {{showRoom1Info}};
     const showInfoRoom2 = {{showRoom2Info}};
+
+    // Set the sensor number
+    document.getElementById("sensor-number").textContent = userId;
 
     // Add click listeners to all room buttons
     document.querySelectorAll(".room-button").forEach(btn => {
