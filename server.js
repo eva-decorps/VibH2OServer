@@ -791,9 +791,9 @@ app.get('/room/:roomId/:userId', (req, res) => {
   } else if (roomStatus == Status.SAVED) {
     // Already recorded
     var stage;
-    if (roomId == 0) { stage = 'cinema-recorded'; }
-    else if (roomId == 1) { stage = 'karaoke-recorded'; }
-    else if (roomId == 2) { stage = 'fresque-recorded'; }
+    if (roomId == 0) { stage = 'cinema-recorded1'; }
+    else if (roomId == 1) { stage = 'karaoke-recorded1'; }
+    else if (roomId == 2) { stage = 'fresque-recorded1'; }
 
     const infoPanelHtml = loadTemplate('info-panel', {
       userId: userId,

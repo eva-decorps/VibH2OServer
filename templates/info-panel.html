@@ -248,7 +248,7 @@
     explanation.innerHTML = `
       <p>Il semble que vous n'ayez pas enregistré votre bpm sur cette installation. </p>`;
     
-  } else if (stage == 'cinema-recorded') {
+  } else if (stage == 'cinema-recorded1') {
 
     subtitle.innerHTML = `Cinéma`;
     backBtn.style.display = 'block';
@@ -258,7 +258,7 @@
     explanation.innerHTML = `
       <p>L'enregistrement a déjà été effectué sur cette installation.</p>`;
 
-  } else if (stage == 'karaoke-recorded') {
+  } else if (stage == 'karaoke-recorded1') {
 
     subtitle.innerHTML = `Karaoké`;
     backBtn.style.display = 'block';
@@ -268,7 +268,7 @@
     explanation.innerHTML = `
       <p>L'enregistrement a déjà été effectué sur cette installation.</p>`;
 
-  } else if (stage == 'fresque-recorded') {
+  } else if (stage == 'fresque-recorded1') {
 
     subtitle.innerHTML = `Fresque des émotions`;
     backBtn.style.display = 'block';
@@ -277,6 +277,36 @@
 
     explanation.innerHTML = `
       <p>L'enregistrement a déjà été effectué sur cette installation.</p>`;
+
+    } else if (stage == 'cinema-recorded2') {
+
+    subtitle.innerHTML = `Cinéma`;
+    backBtn.style.display = 'block';
+    backBtn.innerText = `Oui, effacer et recommencer`;
+    nextBtn.innerText = `Non, retour à l'acceuil`;
+
+    explanation.innerHTML = `
+      <p>L'enregistrement précédent sera effacé et vos données perdues. Êtes vous sur·e de vouloir recommencer l'enregistrement ?</p>`;
+
+  } else if (stage == 'karaoke-recorded2') {
+
+    subtitle.innerHTML = `Karaoké`;
+    backBtn.style.display = 'block';
+    backBtn.innerText = `Oui, effacer et recommencer`;
+    nextBtn.innerText = `Non, retour à l'acceuil`;
+
+    explanation.innerHTML = `
+      <p>L'enregistrement précédent sera effacé et vos données perdues. Êtes vous sur·e de vouloir recommencer l'enregistrement ?</p>`;
+
+  } else if (stage == 'fresque-recorded2') {
+
+    subtitle.innerHTML = `Fresque des émotions`;
+    backBtn.style.display = 'block';
+    backBtn.innerText = `Oui, effacer et recommencer`;
+    nextBtn.innerText = `Non, retour à l'acceuil`;
+
+    explanation.innerHTML = `
+      <p>L'enregistrement précédent sera effacé et vos données perdues. Êtes vous sur·e de vouloir recommencer l'enregistrement ?</p>`;
 
   } else if (stage == 'exit1') {
   
@@ -357,11 +387,17 @@
         window.location.href = `/info-panel/karaoke/${userId}`;
       } else if (stage == 'fresque-missing-data') {
         window.location.href = `/info-panel/fresque1/${userId}`;
-      } else if (stage == 'cinema-recorded') {
+      } else if (stage == 'cinema-recorded1') {
         window.location.href = `/room-selection/${userId}`;
-      } else if (stage == 'karaoke-recorded') {
+      } else if (stage == 'karaoke-recorded1') {
         window.location.href = `/room-selection/${userId}`;
-      } else if (stage == 'fresque-recorded') {
+      } else if (stage == 'fresque-recorded1') {
+        window.location.href = `/room-selection/${userId}`;
+      } else if (stage == 'cinema-recorded2') {
+        window.location.href = `/room-selection/${userId}`;
+      } else if (stage == 'karaoke-recorded2') {
+        window.location.href = `/room-selection/${userId}`;
+      } else if (stage == 'fresque-recorded2') {
         window.location.href = `/room-selection/${userId}`;
       } else {
         window.location.href = '/';
@@ -372,7 +408,7 @@
 
   backBtn.addEventListener("click", (e) => {
     
-    if (stage == 'cinema-recorded') {
+    if (stage == 'cinema-recorded2') {
       fetch(`/api/record/cancel/${userId}/${0}`, {
         method: 'POST',
         headers: {
@@ -380,7 +416,7 @@
         }
       });
       window.location.href = `/info-panel/baseline/${userId}`;
-    } else if (stage == 'karaoke-recorded') {
+    } else if (stage == 'karaoke-recorded2') {
       fetch(`/api/record/cancel/${userId}/${1}`, {
         method: 'POST',
         headers: {
@@ -388,7 +424,7 @@
         }
       });
       window.location.href = `/info-panel/karaoke/${userId}`;
-    } else if (stage == 'fresque-recorded') {
+    } else if (stage == 'fresque-recorded2') {
       fetch(`/api/record/cancel/${userId}/${2}`, {
         method: 'POST',
         headers: {
@@ -396,6 +432,12 @@
         }
       });
       window.location.href = `/info-panel/fresque1/${userId}`;  
+    } else if (stage == 'cinema-recorded1') {
+      window.location.href = `/info-panel/cinema-recorded2/${userId}`;
+    } else if (stage == 'karaoke-recorded1') {
+      window.location.href = `/info-panel/karaoke-recorded2/${userId}`;
+    } else if (stage == 'fresque-recorded1') {
+      window.location.href = `/info-panel/fresque-recorded2/${userId}`;
     } else {
       window.location.href = `/room-selection/results/${userId}`;
     }
