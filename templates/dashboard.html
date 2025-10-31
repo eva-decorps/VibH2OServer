@@ -298,7 +298,7 @@
               bpmData: data.bpmData,
               time: data.time,
               profile: data.profile,
-              mode: data.mode
+              baseline: data.baseline
             };
             updateChart();
             updateStats(data.bpmData[0], data.time);
@@ -353,7 +353,8 @@
     ];
 
     function createDatasets() {
-      
+      if (!currentData) return;
+
       // Convert timestamps in relative time with format hour:min
       const time = currentData.time;
       
@@ -390,6 +391,20 @@
         pointHoverRadius: 5
       }));
 
+      // Add baseline average line if it exists
+      if (currentData.baseline !== undefined && currentData.baseline !== null) {
+        datasets.push({
+          label: 'Repos',
+          data: Array(labels.length).fill(currentData.baseline),
+          borderColor: '#95a3d0',
+          borderWidth: 2,
+          borderDash: [5, 5],
+          radius: 0,
+          tension: 0,
+          pointHoverRadius: 0,
+          pointHitRadius: 0
+        });
+      }
     }
 
     function updateChart() {
@@ -472,8 +487,6 @@
     }
 
     function openFullscreen() {
-      if (!currentData) return;
-
       const overlay = document.getElementById('fullscreenOverlay');
       overlay.classList.add('active');
 

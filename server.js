@@ -67,7 +67,7 @@ Usage: node server.js [options]
 
 Options:
   --seats, -s <number>      Number of seats/users (default: 10)
-  --osc-port, -o <number>   OSC listening port (default: 8000)
+  --osc-port, -o <number>   OSC listening port (default: 9001)
   --server-port, -p <number> HTTP server port (default: 3000)
   --help, -h               Show this help message
 
@@ -605,30 +605,36 @@ app.get('/shared-styles.css', (req, res) => {
 // Get bpm data
 app.get('/api/bpm/:userId/:roomId', (req, res) => {
   const { userId, roomId } = req.params;
-  const roomKey = `room${roomId}`;
-
-  let profiles = [`${userId}`];
-  let bpmData = [userData[userId][roomKey].data.bpm];
-  let time = userData[userId][roomKey].data.timestamp;
-  let multiplayer = userData[userId][roomKey].mode == GameMode.MULTIPLAYER;
-
-  if (multiplayer) {
-    for (const player of userData[userId][roomKey].coplayers) {
-      bpmData.push(userData[player][roomKey].data.bpm);
-      profiles.push(`${player}`);
-    }
-  }
+  const roomKey = roomId >0 ? `room${roomId}` : 'baseline';
 
   // Check data exists
   if (userData[userId]) {
+
+    let profiles = [`${userId}`];
+    let bpmData = [userData[userId][roomKey].data.bpm];
+    let time = userData[userId][roomKey].data.timestamp;
+    let multiplayer = userData[userId][roomKey].mode == GameMode.MULTIPLAYER;
+
+    if (multiplayer) {
+      for (const player of userData[userId][roomKey].coplayers) {
+        bpmData.push(userData[player][roomKey].data.bpm);
+        profiles.push(`${player}`);
+      }
+    }
+
+    const baseline = userData[userId][`baseline`].data.bpm;
+    const validValues = baseline.filter(val => val !== null);
+    const average = validValues.reduce((sum, value) => sum + value, 0) / validValues.length;
+
     res.json({
       success: true,
-      multiplayer: multiplayer,
       userId: userId,
       profile: profiles,
       bpmData: bpmData,
-      time: time
+      time: time,
+      baseline: average
     });
+
   } else {
     res.status(404).json({ success: false, message: 'Data not found' });
   }
