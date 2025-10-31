@@ -171,6 +171,12 @@
       <p>Chantez, laissez-vous emporter. Votre énergie se reflète dans votre rythme cardiaque, en résonance avec la musique
         et avec les autres. </p>`;
 
+  } else if (stage == 'karaoke-multiplayer-recording') {
+    
+    subtitle.innerText = `2. Installation : Karaoké`;
+
+    explanation.innerHTML = `Une session d'enregistrement en multi-joueur est déjà en cours.`
+
   } else if (stage == 'post-karaoke') { 
 
     subtitle.style.display = `none`;
@@ -342,12 +348,50 @@
   }
 
   // Next button - redirect to wherever it should depending on step
-  nextBtn.addEventListener("click", (e) => {
+  nextBtn.addEventListener("click", async (e) => {
     // Add visual feedback
     nextBtn.style.transform = "scale(0.95)";
     setTimeout(() => {
       nextBtn.style.transform = "";
     }, 150);
+
+    // Handle stages that need main player check
+    if (stage == 'karaoke' || stage == 'karaoke-solo' || stage == 'karaoke-multi') {
+      try {
+        const response = await fetch(`/api/main-player/${userId}/1`);
+        const data = await response.json();
+        
+        if (stage == 'karaoke') {
+
+          if (data.mainPlayer) {
+            window.location.href = `/multiplayer/1/${userId}`;
+          } else {
+            window.location.href = `/info-panel/karaoke-multiplayer-recording/${userId}`;
+          }
+          
+        } else if (stage == 'karaoke-solo') { 
+
+          if (data.mainPlayer) {
+            window.location.href = `/room/1/${userId}`;
+          } else {
+            window.location.href = `/info-panel/karaoke-multiplayer-recording/${userId}`;
+          }
+
+        } else if (stage == 'karaoke-multi') {
+
+          if (data.mainPlayer) {
+            window.location.href = `/room/1/${userId}`;
+          } else {
+            window.location.href = `/info-panel/karaoke-multiplayer-recording/${userId}`;
+          }
+
+        }
+      } catch (error) {
+        console.error('Error checking main player status:', error);
+      }
+      return;
+    }
+
     // Redirect toward right page
     setTimeout(() => {
 
@@ -359,10 +403,6 @@
         window.location.href = `/room/0/${userId}`;
       } else if (stage == 'post-baseline') {
         window.location.href = `/room-selection/${userId}`;
-      } else if (stage == 'karaoke') {
-        window.location.href = `/multiplayer/1/${userId}`;
-      } else if (stage == 'karaoke-solo') {
-        window.location.href = `/room/1/${userId}`;
       } else if (stage == 'karaoke-multi') {
         window.location.href = `/room/1/${userId}`;
       } else if (stage == 'post-karaoke') { 
@@ -398,6 +438,8 @@
       } else if (stage == 'karaoke-recorded2') {
         window.location.href = `/room-selection/${userId}`;
       } else if (stage == 'fresque-recorded2') {
+        window.location.href = `/room-selection/${userId}`;
+      } else if (stage == 'karaoke-multiplayer-recording') {
         window.location.href = `/room-selection/${userId}`;
       } else {
         window.location.href = '/';

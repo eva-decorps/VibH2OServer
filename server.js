@@ -138,6 +138,7 @@ function initializeUserData() {
         status: Status.PENDING,
         startTime: null,
         mode: GameMode.SOLO,
+        mainPlayer: false,
         coplayers: [],
         data: {
           bpm: [],
@@ -147,6 +148,7 @@ function initializeUserData() {
       room1: {
         status: Status.PENDING,
         mode: GameMode.SOLO,
+        mainPlayer: false,
         coplayers: [],
         startTime: null,
         data: {
@@ -157,6 +159,7 @@ function initializeUserData() {
       room2: {
         status: Status.PENDING,
         mode: GameMode.SOLO,
+        mainPlayer: false,
         coplayers: [],
         startTime: null,
         data: {
@@ -742,6 +745,35 @@ app.get('/multiplayer/:roomId/:userId', (req, res) => {
   res.send(multiplayerHtml);
 });
 
+// Get if player is main player
+app.get('/api/main-player/:userId/:roomId', (req, res) => {
+  const { userId, roomId } = req.params;
+  const roomKey = `room${roomId}`;
+
+  console.log("hey");
+
+  // Check data exists
+  if (userData[userId]) {
+
+    console.log("hey");
+    
+    if (userData[userId][roomKey].mode == GameMode.SOLO) {
+      res.json({
+        userId: userId,
+        mainPlayer: true
+      });
+    } else {
+      res.json({
+        userId: userId,
+        mainPlayer: userData[userId][roomKey].mainPlayer
+      });
+    }
+
+  } else {
+    res.status(404).json({ success: false, message: 'Data not found' });
+  }
+});
+
 // Get the right graph for the room and user
 app.get('/room/:roomId/:userId', (req, res) => {
   const { roomId, userId } = req.params;
@@ -968,6 +1000,9 @@ app.post('/api/add-co-player/:roomId/:userId', (req, res) => {
 
   // Get the room key based on roomId
   const roomKey = roomId > 0 ? `room${roomId}` : 'baseline';
+
+  // Make player as main player
+  userData[userId][roomKey].mainPlayer = true;
 
   // Add coplayers
   for (const player of coplayers) {
