@@ -332,34 +332,7 @@
       const cancelButton = document.getElementById('cancel-button');
 
       if (!isRecording) {
-        // Start recording
-        isRecording = true;
-        startTime = Date.now();
-
-        recordButton.className = 'record-button stop';
-        recordingIndicator.classList.add('show');
-        if (roomId > 0) buttonText.textContent = 'STOP';
-        else buttonText.textContent = '';
-
-        if (roomId == 0) {
-          statusText.textContent = `Enregistrement de la baseline en cours...
-          Appuyez sur stop une fois les 3 minutes passées.`;
-        } else if (roomId == 1) {
-          statusText.textContent = `Enregistrement du karaoké en cours...
-          Appuyez sur stop une fois le karaoké terminé.`;
-        } else if (roomId == 2) {
-          statusText.textContent = `Enregistrement de la fresque en cours... 
-          Appuyez sur stop une fois l'activité terminée.`;
-        } 
-
-        // Allow to cancel but not to go back to selection or go to next step
-        nextButton.style.display = 'none';
-        cancelButton.style.display = 'block';
-        cancelButton.classList.add('show');
-
-        startTimer();
-        releaseWakeLock();
-
+        // Call the POST API to start recording
         fetch(`/api/record/start/${userId}/${roomId}`, {
           method: 'POST',
           headers: {
@@ -368,9 +341,40 @@
         })
         .then(response => response.json())
         .then(data => {
+
           if (!data.success) {
             console.error('Failed to start recording:', data.message);
           }
+
+          // If was successfull only update UI and start timer
+          // Start recording
+          isRecording = true;
+          startTime = Date.now();
+
+          recordButton.className = 'record-button stop';
+          recordingIndicator.classList.add('show');
+          if (roomId > 0) buttonText.textContent = 'STOP';
+          else buttonText.textContent = '';
+
+          if (roomId == 0) {
+            statusText.textContent = `Enregistrement de la baseline en cours...
+            Appuyez sur stop une fois les 3 minutes passées.`;
+          } else if (roomId == 1) {
+            statusText.textContent = `Enregistrement du karaoké en cours...
+            Appuyez sur stop une fois le karaoké terminé.`;
+          } else if (roomId == 2) {
+            statusText.textContent = `Enregistrement de la fresque en cours... 
+            Appuyez sur stop une fois l'activité terminée.`;
+          } 
+
+          // Allow to cancel but not to go back to selection or go to next step
+          nextButton.style.display = 'none';
+          cancelButton.style.display = 'block';
+          cancelButton.classList.add('show');
+
+          startTimer();
+          releaseWakeLock();
+
         })
         .catch(error => {
           console.error('Error calling start recording API:', error);
@@ -387,32 +391,6 @@
           
         } else 
         {
-          // Stop recording
-          isRecording = false;
-          recordingFinished = true;
-
-          recordButton.style.display = 'none';
-          recordingIndicator.classList.remove('show');
-
-          if (roomId == 0) {
-            statusText.textContent = `Enregistrez la baseline pour aller à l'étape suivante !`;
-          } else if (roomId == 1) {
-            statusText.textContent = `Enregistrez le karaoké pour aller à l'étape suivante !`;
-          } else if (roomId == 2) {
-            statusText.textContent = `Enregistrez la fresque pour aller à l'étape suivante !`;
-          } 
-
-          // Allow both to go to next setp or cancel
-          cancelButton.classList.add('show');
-          cancelButton.style.display = 'block';
-
-          nextButton.classList.add('show');
-          nextButton.style.display = 'block';
-          nextButton.innerText = 'Enregistrer';
-
-          stopTimer();
-          requestWakeLock();
-
           // Call the POST API to stop recording
           fetch(`/api/record/stop/${userId}/${roomId}`, {
             method: 'POST',
@@ -425,6 +403,34 @@
             if (!data.success) {
               console.error('Failed to stop recording:', data.message);
             }
+
+            // If was successfull only update UI and stop timer
+            // Stop recording
+            isRecording = false;
+            recordingFinished = true;
+
+            recordButton.style.display = 'none';
+            recordingIndicator.classList.remove('show');
+
+            if (roomId == 0) {
+              statusText.textContent = `Enregistrez la baseline pour aller à l'étape suivante !`;
+            } else if (roomId == 1) {
+              statusText.textContent = `Enregistrez le karaoké pour aller à l'étape suivante !`;
+            } else if (roomId == 2) {
+              statusText.textContent = `Enregistrez la fresque pour aller à l'étape suivante !`;
+            } 
+
+            // Allow both to go to next setp or cancel
+            cancelButton.classList.add('show');
+            cancelButton.style.display = 'block';
+
+            nextButton.classList.add('show');
+            nextButton.style.display = 'block';
+            nextButton.innerText = 'Enregistrer';
+
+            stopTimer();
+            requestWakeLock();
+
           })
           .catch(error => {
             console.error('Error calling stop recording API:', error);
@@ -446,16 +452,8 @@
     }
 
     function cancelRecording() {
-      // Reset to initial state
-      isRecording = false;
-      startTime = null;
-      recordingFinished = false;
-      stopTimer();  
-      init();
 
-      const cancelButton = document.getElementById('cancel-button');
-      cancelButton.innerText = 'Annuler';
-
+      // Call the POST API to cancel recording
       fetch(`/api/record/cancel/${userId}/${roomId}`, {
         method: 'POST',
         headers: {
@@ -465,7 +463,18 @@
         .then(response => response.json())
         .then(data => {
           if (data.success) {
-            stopTimer();
+            
+            // Reset to initial state
+            isRecording = false;
+            startTime = null;
+            recordingFinished = false;
+            stopTimer();  
+            init();
+
+            const cancelButton = document.getElementById('cancel-button');
+            cancelButton.innerText = 'Annuler';
+            cancelButton.onclick = askCancel;
+
           } else {
             console.error('Failed to cancel recording:', data.message);
           }
