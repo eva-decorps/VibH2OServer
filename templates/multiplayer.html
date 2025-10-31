@@ -225,10 +225,15 @@
       if (player3) playerIds.push(parseInt(player3));
       if (player4) playerIds.push(parseInt(player4));
       
-      // Vérifier qu'au moins un champ est rempli
+      // Vérifier qu'au moins un champ est rempli et qu'on ne s'est pas ajouté soi même
+      const errorMessage = document.getElementById('errorMessage');
       if (playerIds.length === 0) {
-        const errorMessage = document.getElementById('errorMessage');
         errorMessage.style.display = 'block';
+        errorMessage.innerText = 'Veuillez remplir au moins un champ pour jouer en multijoueur';
+        return;
+      } else if (player1 == userId || player2 == userId || player3 == userId || player4 == userId) {
+        errorMessage.style.display = 'block';
+        errorMessage.innerText = `Vous n'avez pas besoin de rajouter votre propre indentifiant`;
         return;
       }
       
