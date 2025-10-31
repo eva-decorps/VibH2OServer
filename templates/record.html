@@ -251,6 +251,7 @@
         recordButton.className = 'record-button stop';
         buttonText.textContent = 'STOP';
         recordingIndicator.classList.add('show');
+        nextButton.style.display = 'none'
 
         if (roomId == 0) {
           statusText.textContent = `Enregistrement de la baseline en cours...
