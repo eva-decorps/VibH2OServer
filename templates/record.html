@@ -225,9 +225,54 @@
     const beepSound = new Audio('/ressources/beep-recording-end.mp3');
     let audioEnabled = false;
     let audioContext;
+    // Multiplayer
+    let multiplayerCheckInterval = null;
 
     // Set the sensor number
     document.getElementById("sensor-number").textContent = userId;
+
+    // Multiplayer check
+    function checkMultiplayerStatus() {
+      // Only check for karaoke room (roomId === 1)
+      if (roomId !== 1) return;
+      
+      fetch(`/api/main-player/${userId}/${roomId}`)
+        .then(response => response.json())
+        .then(data => {
+            // If not main player and recording hasn't started or finished yet
+            if (!data.mainPlayer && !isRecording && !recordingFinished) {
+              // Stop the interval
+              if (multiplayerCheckInterval) {
+                clearInterval(multiplayerCheckInterval);
+                multiplayerCheckInterval = null;
+              }
+              // Redirect to multiplayer recording info page
+              window.location.href = `/info-panel/karaoke-multiplayer-recording/${userId}`;
+            }
+          }
+        })
+        .catch(error => {
+          console.error('Error checking multiplayer status:', error);
+        });
+    }
+
+    function startMultiplayerCheck() {
+      // Only start for karaoke room
+      if (roomId === 1) {
+        // Check immediately
+        checkMultiplayerStatus();
+        
+        // Then check every 3 seconds
+        multiplayerCheckInterval = setInterval(checkMultiplayerStatus, 3000);
+      }
+    }
+
+    function stopMultiplayerCheck() {
+      if (multiplayerCheckInterval) {
+        clearInterval(multiplayerCheckInterval);
+        multiplayerCheckInterval = null;
+      }
+    }
 
     // Mettre une fonction init ici : 
     function init() {
@@ -311,6 +356,9 @@
           nextButton.style.display = 'block';
         }
       }
+
+      // Add this at the end:
+      startMultiplayerCheck();
     }
 
     function toggleRecording() {
@@ -332,6 +380,8 @@
       const cancelButton = document.getElementById('cancel-button');
 
       if (!isRecording) {
+        stopMultiplayerCheck();
+
         // Call the POST API to start recording
         fetch(`/api/record/start/${userId}/${roomId}`, {
           method: 'POST',
@@ -598,6 +648,8 @@
 
     // Initialize the page with room-specific status text
     document.addEventListener('DOMContentLoaded', init);
+
+    window.addEventListener('beforeunload', stopMultiplayerCheck);
 
   </script>
 </body>

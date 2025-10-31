@@ -200,72 +200,101 @@
     }
 
     function soloMode() {
-      window.location.href = `/info-panel/karaoke-solo/${userId}`;
+      // Si une session est déjà en cours d'enregistrement en mode mutliplayer
+      fetch(`/api/main-player/${userId}/${1}`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.mainPlayer) window.location.href = `/info-panel/karaoke-solo/${userId}`;
+          else window.location.href = `/info-panel/karaoke-multiplayer-recording/${userId}`;
+        })
+        .catch(error => console.error('Erreur main player:', error));
     }
 
     function multiMode() {
-      document.getElementsByClassName("game-mode solo")[0].style.display = 'none';
-      document.getElementsByClassName("player-inputs")[0].style.display = 'block';
-      document.getElementsByClassName("info")[0].style.display = 'block';
-      document.getElementsByClassName("game-mode multi")[0].innerText = 'Ajouter les joueur·euses';
-      document.getElementsByClassName("game-mode multi")[0].onclick = addPlayers;
+      // Si une session est déjà en cours d'enregistrement en mode mutliplayer
+/*       fetch(`/api/main-player/${userId}/${1}`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.mainPlayer) { */
+            document.getElementsByClassName("game-mode solo")[0].style.display = 'none';
+            document.getElementsByClassName("player-inputs")[0].style.display = 'block';
+            document.getElementsByClassName("info")[0].style.display = 'block';
+            document.getElementsByClassName("game-mode multi")[0].innerText = 'Ajouter les joueur·euses';
+            document.getElementsByClassName("game-mode multi")[0].onclick = addPlayers;
+/*           }
+          else {
+            window.location.href = `/info-panel/karaoke-multiplayer-recording/${userId}`;
+          }
+        })
+        .catch(error => console.error('Erreur main player:', error)); */
     }
 
     function addPlayers() {
-      // Récupérer les valeurs des champs
-      const player1 = document.getElementById('player1').value.trim();
-      const player2 = document.getElementById('player2').value.trim();
-      const player3 = document.getElementById('player3').value.trim();
-      const player4 = document.getElementById('player4').value.trim();
-      
-      // Filtrer les champs non vides
-      const playerIds = [];
-      if (player1) playerIds.push(parseInt(player1));
-      if (player2) playerIds.push(parseInt(player2));
-      if (player3) playerIds.push(parseInt(player3));
-      if (player4) playerIds.push(parseInt(player4));
-      
-      // Vérifier qu'au moins un champ est rempli et qu'on ne s'est pas ajouté soi même
-      const errorMessage = document.getElementById('errorMessage');
-      if (playerIds.length === 0) {
-        errorMessage.style.display = 'block';
-        errorMessage.innerText = 'Veuillez remplir au moins un champ pour jouer en multijoueur';
-        return;
-      } else if (player1 == userId || player2 == userId || player3 == userId || player4 == userId) {
-        errorMessage.style.display = 'block';
-        errorMessage.innerText = `Vous n'avez pas besoin de rajouter votre propre indentifiant`;
-        return;
-      }
-      
-      // Masquer le message d'erreur s'il était affiché
-      document.getElementById('errorMessage').style.display = 'none';
-      
-      // Construire l'URL avec les IDs des joueurs
-      const playerIdsParam = playerIds.join(',');
-      
-      fetch(`/api/add-co-player/${roomId}/${userId}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          coplayers: playerIds  // variable length array (1–4 players)
+      // Si une session est déjà en cours d'enregistrement en mode mutliplayer
+      fetch(`/api/main-player/${userId}/${1}`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.mainPlayer) {
+            
+            // Récupérer les valeurs des champs
+            const player1 = document.getElementById('player1').value.trim();
+            const player2 = document.getElementById('player2').value.trim();
+            const player3 = document.getElementById('player3').value.trim();
+            const player4 = document.getElementById('player4').value.trim();
+            
+            // Filtrer les champs non vides
+            const playerIds = [];
+            if (player1) playerIds.push(parseInt(player1));
+            if (player2) playerIds.push(parseInt(player2));
+            if (player3) playerIds.push(parseInt(player3));
+            if (player4) playerIds.push(parseInt(player4));
+            
+            // Vérifier qu'au moins un champ est rempli et qu'on ne s'est pas ajouté soi même
+            const errorMessage = document.getElementById('errorMessage');
+            if (playerIds.length === 0) {
+              errorMessage.style.display = 'block';
+              errorMessage.innerText = 'Veuillez remplir au moins un champ pour jouer en multijoueur';
+              return;
+            } else if (player1 == userId || player2 == userId || player3 == userId || player4 == userId) {
+              errorMessage.style.display = 'block';
+              errorMessage.innerText = `Vous n'avez pas besoin de rajouter votre propre indentifiant`;
+              return;
+            }
+            // Masquer le message d'erreur s'il était affiché
+            document.getElementById('errorMessage').style.display = 'none';
+            
+            // Construire l'URL avec les IDs des joueurs
+            const playerIdsParam = playerIds.join(',');
+            
+            fetch(`/api/add-co-player/${roomId}/${userId}`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                coplayers: playerIds  // variable length array (1–4 players)
+              })
+            })
+            .then(response => response.json())
+            .then(data => {
+              if (data.success) {
+                window.location.href = `/info-panel/karaoke-multi/${userId}`;
+              } else {
+                const errorMessage = document.getElementById('errorMessage');
+                errorMessage.innerText = 'Un des identifiants est invalide';
+                errorMessage.style.display = 'block';
+              }
+            })
+            .catch(error => {
+              console.error('Erreur lors de la requête:', error);
+              const errorMessage = document.getElementById('errorMessage');
+              errorMessage.innerText = 'Une erreur est survenue.';
+              errorMessage.style.display = 'block';
+            });
+          } else { 
+            window.location.href = `/info-panel/karaoke-multiplayer-recording/${userId}`;
+          }
+          
         })
-      })
-      .then(response => response.json())
-      .then(data => {
-        if (data.success) {
-          window.location.href = `/info-panel/karaoke-multi/${userId}`;
-        } else {
-          const errorMessage = document.getElementById('errorMessage');
-          errorMessage.innerText = 'Un des identifiants est invalide';
-          errorMessage.style.display = 'block';
-        }
-      })
-      .catch(error => {
-        console.error('Erreur lors de la requête:', error);
-        const errorMessage = document.getElementById('errorMessage');
-        errorMessage.innerText = 'Une erreur est survenue.';
-        errorMessage.style.display = 'block';
-      });
+        .catch(error => console.error('Erreur main player:', error));
 
     }
 

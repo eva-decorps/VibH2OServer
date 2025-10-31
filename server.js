@@ -750,12 +750,8 @@ app.get('/api/main-player/:userId/:roomId', (req, res) => {
   const { userId, roomId } = req.params;
   const roomKey = `room${roomId}`;
 
-  console.log("hey");
-
   // Check data exists
   if (userData[userId]) {
-
-    console.log("hey");
     
     if (userData[userId][roomKey].mode == GameMode.SOLO) {
       res.json({
