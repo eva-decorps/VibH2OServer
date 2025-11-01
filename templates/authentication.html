@@ -23,7 +23,21 @@
   <script>
     function authenticateUser() {
       // Go to authentication
-      let userId = document.getElementById('userIdInput').value.trim();
+      let userIdInput = document.getElementById('userIdInput')
+      const userId = userIdInput.value.trim();
+
+      if (!userId) {
+        // Show an alert or highlight the field
+        //alert("Please enter your user ID before continuing.");
+        let infoBox = document.getElementsByClassName("info")[0];
+
+        userIdInput.style.border = '1.5px solid #721c24';
+        infoBox.style.color = '#721c24';
+        infoBox.style.background = '#f8d7da';
+
+        return;
+      }
+
       window.location.href = `/auth/${userId}`;
     }
 
