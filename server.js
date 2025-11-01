@@ -753,7 +753,7 @@ app.get('/api/main-player/:userId/:roomId', (req, res) => {
   // Check data exists
   if (userData[userId]) {
     
-    if (userData[userId][roomKey].mode == GameMode.SOLO || userData[userId][roomKey].status == Status.RECORDED) {
+    if (userData[userId][roomKey].mode == GameMode.SOLO || userData[userId][roomKey].status == Status.SAVED) {
       res.json({
         userId: userId,
         mainPlayer: true
