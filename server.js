@@ -465,7 +465,7 @@ const addressMap = {
   "00BDA035": "145",
   "00BE533A": "146",
   "00BE033B": "147",
-  "00BDF034": "148",
+  "01E41F3A": "148",
   "00BDAF34": "149",
   "00BDA136": "150",
   "00BD8635": "151",
@@ -1235,6 +1235,10 @@ app.post('/api/registration/new/:userId', (req, res) => {
     // Reset data in dict
     userData[userId][roomKey].data.bpm = [];
     userData[userId][roomKey].data.timestamp = [];
+    // Reset game mode
+    userData[userId][roomKey].mode = GameMode.SOLO;
+    userData[userId][roomKey].mainPlayer = false;
+    userData[userId][roomKey].coplayers = [];
     // Delete files
     deleteUserFile(userId, roomId);
   }
