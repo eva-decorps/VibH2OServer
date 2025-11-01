@@ -219,8 +219,8 @@
           <div class="stat-value" id="durationValue">00:00</div>
         </div>
         <div class="stat-card">
-          <div class="stat-label">Calories</div>
-          <div class="stat-value" id="caloriesValue">0<span class="stat-unit"> kcal</span></div>
+          <div class="stat-label">Repos</div>
+          <div class="stat-value" id="baseline">0<span class="stat-unit"> bpm</span></div>
         </div>
         <div class="stat-card">
           <div class="stat-label">Fréquence moyenne</div>
@@ -331,12 +331,9 @@
         document.getElementById('maxHrValue').innerHTML = `${maxHr}<span class="stat-unit"> bpm</span>`;
       }
 
-      // Estimate calories (simple formula: avg HR * duration in hours * weight factor)
-      if (validBpm.length > 0 && time.length > 0) {
-        const avgHr = validBpm.reduce((sum, val) => sum + val, 0) / validBpm.length;
-        const durationHours = (time[time.length - 1] - time[0]) / (1000 * 3600);
-        const estimatedCalories = Math.round(avgHr * durationHours * 3.5); // Rough estimation
-        document.getElementById('caloriesValue').innerHTML = `${estimatedCalories}<span class="stat-unit"> kcal</span>`;
+      // Add baseline bpm
+      if (currentData.baseline) {
+        document.getElementById('baseline').innerHTML = `${currentData.baseline}<span class="stat-unit"> bpm</span>`;
       }
     }
 
