@@ -314,6 +314,18 @@
     explanation.innerHTML = `
       <p>L'enregistrement précédent sera effacé et vos données perdues. Êtes vous sur·e de vouloir recommencer l'enregistrement ?</p>`;
 
+  } else if (stage == 'recordings-finished') {
+
+    subtitle.style.display = 'none';
+    nextBtn.innerText = 'Voir mes données';
+    backBtn.style.display = 'block';
+
+    explanation.innerHTML = `
+      <p> Vous avez fini d'enregistrer vos données pour toutes les installations, vous pouvez maintenant voir
+        l'impact de vos émotions sur votre rythme cardiaque.</p>
+      <p>Pensez à prendre une capture d'écran de vos émotions pour garder un souvenir .</p>
+      <p>Si vous souhaitez recommencer un enregistrement cliquez sur "retour à l'acceuil".</p>`;
+  
   } else if (stage == 'exit1') {
   
     subtitle.innerText = `Accéder aux résultats`;
@@ -392,6 +404,24 @@
       return;
     }
 
+    // Handle stages that need recordings status check
+    if (stage == 'post-fresque' || stage == 'post-karaoke') {
+      try {
+        const response = await fetch(`/api/recordings-status/${userId}`);
+        const data = await response.json();
+
+        if (data.finished) {
+          window.location.href = `/info-panel/recordings-finished/${userId}`;
+        } else {
+          window.location.href = `/room-selection/${userId}`;
+        }
+        
+      } catch (error) {
+        console.error('Error checking main player status:', error);
+      }
+      return;
+    }
+
     // Redirect toward right page
     setTimeout(() => {
 
@@ -405,16 +435,14 @@
         window.location.href = `/room-selection/${userId}`;
       } else if (stage == 'karaoke-multi') {
         window.location.href = `/room/1/${userId}`;
-      } else if (stage == 'post-karaoke') { 
-        window.location.href = `/room-selection/${userId}`;
       } else if (stage == 'fresque1') {
         window.location.href = `/info-panel/fresque2/${userId}`;
       } else if (stage == 'fresque2') {
         window.location.href = `/room/2/${userId}`;
-      } else if (stage == 'post-fresque') {
-        window.location.href = `/room-selection/${userId}`;
       } else if (stage == 'result') {
         window.location.href = `/room-selection/${userId}`;
+      } else if (stage == 'recordings-finished') {
+        window.location.href = `/room-selection/results/${userId}`; 
       } else if (stage == 'exit1') {
         window.location.href = `/room-selection/results/${userId}`;     
       } else if (stage == 'exit2') {
@@ -480,6 +508,10 @@
       window.location.href = `/info-panel/karaoke-recorded2/${userId}`;
     } else if (stage == 'fresque-recorded1') {
       window.location.href = `/info-panel/fresque-recorded2/${userId}`;
+    } else if (stage == 'recordings-finished') {
+      window.location.href = `/room-selection/${userId}`;
+    } else if (stage == 'exit1') {
+      window.location.href = `/room-selection/${userId}`;
     } else {
       window.location.href = `/room-selection/results/${userId}`;
     }

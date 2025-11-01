@@ -770,6 +770,32 @@ app.get('/api/main-player/:userId/:roomId', (req, res) => {
   }
 });
 
+// Get if all rooms are aved or not
+app.get('/api/recordings-status/:userId', (req, res) => {
+  const { userId } = req.params;
+
+  // Check data exists
+  if (userData[userId]) {
+
+    let finished = true;
+    let roomId = 0;
+    while (roomId<=NUMBER_OF_ROOMS) {
+      const roomKey = roomId >0 ? `room${roomId}` : 'baseline';
+      if (userData[userId][roomKey].status != Status.SAVED) {
+        finished = false;
+      }
+      roomId++;
+    }
+    
+    res.json({
+      finished: finished
+    });
+
+  } else {
+    res.status(404).json({ success: false, message: 'Data not found' });
+  }
+});
+
 // Get the right graph for the room and user
 app.get('/room/:roomId/:userId', (req, res) => {
   const { roomId, userId } = req.params;
