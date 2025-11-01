@@ -185,7 +185,7 @@ function loadBpmDataFromFiles(userData) {
     // Loop through all rooms
     for (let room=0; room<=NUMBER_OF_ROOMS; room++) {
       const roomKey = room >0 ? `room${room}` : 'baseline';
-      var filePath = path.join(__dirname, 'user', `${i}`, `stage_${room}.txt`);
+      var filePath = room >0 ? path.join(__dirname, 'user', `${i}`, `stage_${room}.txt`) :  path.join(__dirname, 'user', `${i}`, `baseline.txt`);
 
       if (!fs.existsSync(filePath)) {
         // Skip if file does not exist
