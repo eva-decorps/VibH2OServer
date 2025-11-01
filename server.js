@@ -509,6 +509,8 @@ const addressMap = {
   "01E4573E": "189"
 };
 
+var unregisteredSensor = [];
+
 // Create an OSC UDP Port on localhost, configured port
 const udpPort = new osc.UDPPort({
   localAddress: "0.0.0.0",
@@ -587,6 +589,13 @@ udpPort.on("message", (oscMsg, timeTag, info) => {
         }
       }
 
+    } else {
+      // Debug for sensor not registered
+      const id = match[1];
+      if (!unregisteredSensor.includes(id)) {
+        console.log("Unknown id: ", id);
+        unregisteredSensor.push(id);
+      }
     }
     
   }
