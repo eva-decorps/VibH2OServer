@@ -174,8 +174,18 @@
   } else if (stage == 'karaoke-multiplayer-recording') {
     
     subtitle.innerText = `2. Installation : Karaoké`;
+    backBtn.style.display = 'block';
+    backBtn.innerText = 'Sortir du mode multi-joueur'
 
     explanation.innerHTML = `Une session d'enregistrement en multi-joueur est déjà en cours.`
+
+  } else if (stage == 'exit-karaoke-multiplayer') {
+
+    subtitle.innerText = `2. Installation : Karaoké`;
+    backBtn.style.display = 'block';
+    backBtn.innerText = 'Oui, sortir du mode multi-joueur'
+
+    explanation.innerHTML = `Êtes-vous sûr·e de vouloir quitter la session multi-joueur en cours ?`
 
   } else if (stage == 'post-karaoke') { 
 
@@ -302,7 +312,7 @@
     nextBtn.innerText = `Non, retour à l'acceuil`;
 
     explanation.innerHTML = `
-      <p>L'enregistrement précédent sera effacé et vos données perdues. Êtes vous sur·e de vouloir recommencer l'enregistrement ?</p>`;
+      <p>L'enregistrement précédent sera effacé et vos données perdues. Êtes vous sûr·e de vouloir recommencer l'enregistrement ?</p>`;
 
   } else if (stage == 'fresque-recorded2') {
 
@@ -469,6 +479,8 @@
         window.location.href = `/room-selection/${userId}`;
       } else if (stage == 'karaoke-multiplayer-recording') {
         window.location.href = `/room-selection/${userId}`;
+      } else if (stage == 'exit-karaoke-multiplayer') {
+        window.location.href = `/room-selection/${userId}`;
       } else {
         window.location.href = '/';
       }
@@ -510,6 +522,22 @@
       window.location.href = `/info-panel/fresque-recorded2/${userId}`;
     } else if (stage == 'recordings-finished') {
       window.location.href = `/room-selection/${userId}`;
+    } else if (stage == 'karaoke-multiplayer-recording') {
+      window.location.href = `/info-panel/exit-karaoke-multiplayer/${userId}`;
+    } else if (stage == 'exit-karaoke-multiplayer') {
+      fetch(`/api/cancel-multiplayer/${userId}/${1}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            window.location.href = `/room-selection/${userId}`;
+          }
+        })
+        .catch(error => console.error('Erreur BPM:', error));
     } else if (stage == 'exit1') {
       window.location.href = `/room-selection/${userId}`;
     } else {

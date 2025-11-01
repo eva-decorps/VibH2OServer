@@ -1213,6 +1213,10 @@ app.post('/api/record/cancel/:userId/:roomId', (req, res) => {
   // Reset data in dict
   userData[userId][roomKey].data.bpm = [];
   userData[userId][roomKey].data.timestamp = [];
+  // Reset game mode
+  userData[userId][roomKey].mode = GameMode.SOLO;
+  userData[userId][roomKey].mainPlayer = false;
+  userData[userId][roomKey].coplayers = [];
   // Delete files
   deleteUserFile(userId, roomId);
 
@@ -1234,6 +1238,59 @@ app.post('/api/record/cancel/:userId/:roomId', (req, res) => {
     success: true, 
     message: 'Recording cancelled',
     status: Status.PENDING
+  });
+});
+
+// Remove player from multiplayer
+app.post('/api/cancel-multiplayer/:userId/:roomId', (req, res) => {
+  const { userId, roomId } = req.params;
+
+  // Validate user exists
+  if (!userData[userId]) {
+    const errorHtml = loadTemplate('error', {
+      userId: userId,
+      numSeats: NUM_SEATS
+    });
+
+    res.status(404).send(errorHtml);
+  }
+
+  // Validate room ID (0-NUMBER_OF_ROOMS)
+  if (roomId < 0 || roomId > NUMBER_OF_ROOMS) {
+    return res.status(400).json({ 
+      success: false, 
+      message: 'Invalid room ID' 
+    });
+  }
+
+  // Get the room key based on roomId
+  const roomKey = roomId > 0 ? `room${roomId}` : 'baseline';
+
+  // Remove user from list in other players 
+  if (userData[userId][roomKey].mode == GameMode.MULTIPLAYER) {
+    for (const player of userData[userId][roomKey].coplayers) {
+      // TODO later...
+      // Remove userId from the userData[player][roomKey].coplayers
+    }
+  }
+
+  // Reset status for user
+  // Set status to PENDING
+  userData[userId][roomKey].status = Status.PENDING;
+  userData[userId][roomKey].startTime = null;
+  // Reset data in dict
+  userData[userId][roomKey].data.bpm = [];
+  userData[userId][roomKey].data.timestamp = [];
+  // Reset game mode
+  userData[userId][roomKey].mode = GameMode.SOLO;
+  userData[userId][roomKey].mainPlayer = false;
+  userData[userId][roomKey].coplayers = [];
+  // Delete files
+  deleteUserFile(userId, roomId);
+  
+  res.json({ 
+    success: true, 
+    message: 'Removed from multiplayer mode'
   });
 });
 
