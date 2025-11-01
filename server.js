@@ -748,12 +748,12 @@ app.get('/multiplayer/:roomId/:userId', (req, res) => {
 // Get if player is main player
 app.get('/api/main-player/:userId/:roomId', (req, res) => {
   const { userId, roomId } = req.params;
-  const roomKey = `room${roomId}`;
+  const roomKey = roomId >0 ? `room${roomId}` : 'baseline';
 
   // Check data exists
   if (userData[userId]) {
     
-    if (userData[userId][roomKey].mode == GameMode.SOLO) {
+    if (userData[userId][roomKey].mode == GameMode.SOLO || userData[userId][roomKey].status == Status.RECORDED) {
       res.json({
         userId: userId,
         mainPlayer: true
