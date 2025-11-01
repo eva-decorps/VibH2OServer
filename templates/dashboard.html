@@ -333,7 +333,7 @@
 
       // Add baseline bpm
       if (currentData.baseline) {
-        document.getElementById('baseline').innerHTML = `${currentData.baseline}<span class="stat-unit"> bpm</span>`;
+        document.getElementById('baseline').innerHTML = `${Math.round(currentData.baseline,0)}<span class="stat-unit"> bpm</span>`;
       }
     }
 
