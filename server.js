@@ -16,6 +16,7 @@ function parseCommandLineArgs() {
   let numSeats = 10; // Default value
   let oscPort = 9001; // Default OSC port
   let serverPort = 3000; // Default server port
+  let debug = false;
 
   for (let i = 0; i < args.length; i++) {
     switch (args[i]) {
@@ -58,6 +59,10 @@ function parseCommandLineArgs() {
           }
         }
         break;
+      case '--debug':
+      case '-d':
+        debug = true;
+        break;
       case '--help':
       case '-h':
         console.log(`
@@ -85,7 +90,7 @@ Examples:
     }
   }
 
-  return { numSeats, oscPort, serverPort };
+  return { numSeats, oscPort, serverPort, debug };
 }
 
 // Get configuration from command line
@@ -93,6 +98,7 @@ const config = parseCommandLineArgs();
 const NUM_SEATS = config.numSeats;
 const OSC_PORT = config.oscPort;
 const SERVER_PORT = config.serverPort;
+const DEBUG = config.debug;
 
 const NUMBER_OF_ROOMS = 2;
 
@@ -510,6 +516,7 @@ const addressMap = {
 };
 
 var unregisteredSensor = [];
+var registeredSensor = [];
 
 // Create an OSC UDP Port on localhost, configured port
 const udpPort = new osc.UDPPort({
@@ -531,6 +538,12 @@ udpPort.on("message", (oscMsg, timeTag, info) => {
 
     // Check if it is currently in use
     if (userData[id]) {
+
+      // Debug to know sensor in use
+      if (DEBUG && !registeredSensor.includes(id)) {
+        console.log("New id: ", id);
+        registeredSensor.push(id);
+      }
 
       // Check at what stage it is
       const bpm = parseInt(oscMsg.args[0].value);
@@ -591,10 +604,10 @@ udpPort.on("message", (oscMsg, timeTag, info) => {
 
     } else {
       // Debug for sensor not registered
-      const id = match[1];
-      if (!unregisteredSensor.includes(id)) {
-        console.log("Unknown id: ", id);
-        unregisteredSensor.push(id);
+      const unknownId = match[1];
+      if (DEBUG && !unregisteredSensor.includes(unknownId)) {
+        console.log("Unknown id: ", unknownId);
+        unregisteredSensor.push(unknownId);
       }
     }
     
