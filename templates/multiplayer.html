@@ -192,8 +192,39 @@
     const userId = {{userId}};
     const roomId = {{roomId}};
 
-    // Set the sensor number
-    document.getElementById("sensor-number").textContent = userId;
+    // Multiplayer
+    let multiplayerCheckInterval = null;
+
+    function init() {
+      // Set the sensor number
+      document.getElementById("sensor-number").textContent = userId;
+
+      checkMultiplayerStatus();
+          
+      // Then check every 3 seconds
+      multiplayerCheckInterval = setInterval(checkMultiplayerStatus, 3000);
+    }
+
+    // Multiplayer check
+    function checkMultiplayerStatus() {    
+      fetch(`/api/main-player/${userId}/${roomId}`)
+        .then(response => response.json())
+        .then(data => {
+            // If not main player and recording hasn't started or finished yet
+            if (!data.mainPlayer) {
+              // Stop the interval
+              if (multiplayerCheckInterval) {
+                clearInterval(multiplayerCheckInterval);
+                multiplayerCheckInterval = null;
+              }
+              // Redirect to multiplayer recording info page
+              window.location.href = `/info-panel/karaoke-multiplayer-recording/${userId}`;
+            }
+        })
+        .catch(error => {
+          console.error('Error checking multiplayer status:', error);
+        });
+    }
 
     function backToSelection() {
        window.location.href = `/room-selection/${userId}`;
@@ -297,6 +328,9 @@
         .catch(error => console.error('Erreur main player:', error));
 
     }
+
+    // Initialize the page with room-specific status text
+    document.addEventListener('DOMContentLoaded', init);
 
   </script>
 
