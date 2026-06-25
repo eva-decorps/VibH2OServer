@@ -205,7 +205,10 @@
               time: data.time,
               profile: data.profile,
               avgBpm: data.avg,
-              landmarks: data.landmarks
+              stdBpm: data.std, 
+              landmarks: data.landmarks,
+              synchronieData: data.synchronieData,
+              //synchronieTime: data.synchronieTime
             };
             updateChart();
           }
@@ -228,6 +231,15 @@
       const avgBpm = currentData.avgBpm;
       const landmarks = currentData.landmarks;
       const profileName = currentData.profile;
+      const synchronieData = currentData.synchronieData;
+
+      // Standart deviation
+      const stdBpm = currentData.stdBpm;
+      //console.log(stdBpm);
+
+      // Compute upper and lower std deviation bands
+      const avgUpper = avgBpm.map((v, i) => v !== null && stdBpm[i] != null ? v + stdBpm[i] : null);
+      const avgLower = avgBpm.map((v, i) => v !== null && stdBpm[i] != null ? v - stdBpm[i] : null);
       
       // Convert timestamps in relative time with format hour:min
       const startTime = time[0];
@@ -238,6 +250,17 @@
       
         return hours + ':' + minutes.toString().padStart(2, '0');
       });
+
+      // Find how many data points correspond to the offset duration
+      const offsetMs = 60 * 11 * 1000;
+      const offsetIndex = time.findIndex(t => (t - startTime) >= offsetMs);
+      const shiftBy = offsetIndex >= 0 ? offsetIndex : 0;
+
+      // Shift synchronieData: prepend nulls so it starts later
+      const shiftedSynchronie = [
+        ...Array(shiftBy).fill(null),
+        ...synchronieData.slice(0, time.length - shiftBy)   // trim to keep same array length
+      ];
       
       // Define y bounds
       const allBpmValues = [...bpmData, ...avgBpm].filter(val => val !== null);
@@ -249,23 +272,56 @@
 
       // Define datasets
       datasets = [
+        // {
+        //   label: 'Capteur ' + profileName,
+        //   data: bpmData,
+        //   borderColor: '#36A2EB',
+        //   borderWidth: 2,
+        //   radius: 0,
+        //   tension: 0.2,
+        //   pointHoverRadius: 5
+        // },
         {
-          label: 'Capteur ' + profileName,
-          data: bpmData,
-          borderColor: '#36A2EB',
-          borderWidth: 2,
+          label: '',
+          data: avgUpper,
+          borderColor: 'transparent',
+          backgroundColor: 'rgba(221, 119, 104, 0.15)',
+          fill: '+1',
           radius: 0,
+          pointHoverRadius: 0,
           tension: 0.2,
-          pointHoverRadius: 5
+          yAxisID: 'y'
         },
         {
-          label: 'Moyenne du public',
+          label: 'Écart-type public',
+          data: avgLower,
+          borderColor: 'transparent',
+          backgroundColor: 'rgba(221, 119, 104, 0.15)',
+          fill: false,
+          radius: 0,
+          pointHoverRadius: 0,
+          tension: 0.2,
+          yAxisID: 'y'
+        },
+        {
+          label: 'Moyenne public',
           data: avgBpm,
           borderColor: '#dd7768',
           borderWidth: 2,
           radius: 0,
           tension: 0.2,
-          pointHoverRadius: 5
+          pointHoverRadius: 5,
+          yAxisID: 'y'
+        },
+        {
+          label: 'Synchronie',
+          data: shiftedSynchronie,
+          borderColor: '#4BC0C0',
+          borderWidth: 2,
+          radius: 0,
+          tension: 0.2,
+          pointHoverRadius: 5,
+          yAxisID: 'y-right'
         }
       ];
           
@@ -359,9 +415,7 @@
             legend: {
               labels: {
                 color: '#737fa9',
-                font: {
-                  size: 15
-                },
+                font: { size: 15 },
                 padding: 20
               }
             },
@@ -371,6 +425,7 @@
           },
           scales: {
             y: {
+              position: 'left',
               beginAtZero: false,
               min: yMinBound,
               max: yMaxBound,
@@ -417,6 +472,8 @@
           }
         }
       });
+      
+      Chart.register(Chart.registry.plugins.get('filler'));
     }
 
     function openFullscreen() {

@@ -42,6 +42,7 @@ function loadTemplate(templateName, variables = {}) {
 // Load data from vib-eMotion BPM recording
 function loadBpmDataFromFiles() {
   var maxID = 0;
+  var baselineStop = 0;
   const bpmData = {};
   const filePath = path.join(__dirname, 'data', 'bpm_data.txt');
 
@@ -52,6 +53,7 @@ function loadBpmDataFromFiles() {
     for (const line of lines) {
       // Match pattern like: "77, /98/ 66 1749735435400.;"
       const match = line.match(/^(\d+),\s*\/(\d+)\/\s+(\d+)\s+(\d+)\.;/);
+      const baseline = line.match(/^(\d+),\s*Stop\s+(\d+)\.\;$/);
       
       if (match) {
         const [, , id, bpm, timestamp] = match;
@@ -73,6 +75,10 @@ function loadBpmDataFromFiles() {
             time: [parseInt(timestamp)] // Unix timestamp format
           }
         }
+      } else if (baseline) {
+        const [, , timestamp] = baseline;
+        // Search baseline info 
+        baselineStop = parseInt(timestamp);
       }
     }
   } catch (err) {
@@ -86,7 +92,7 @@ function loadBpmDataFromFiles() {
   // Compute average BPM every second (1000 ms)
   const averageBpm = calculateAverageBpm(bpmData, 5000);
     
-  return [maxID, averageBpm.users, averageBpm.global];
+  return [maxID, averageBpm.users, averageBpm.global, baselineStop];
 }
 
 // Compute average BPM for a given interval and apply the same temporal smoothing per user
@@ -94,7 +100,7 @@ function calculateAverageBpm(bpmData, intervalMs = 1000) {
   const userIds = Object.keys(bpmData);
 
   if (userIds.length === 0) {
-    return { global: { name: 'Moyenne globale', data: [], time: [] }, users: {} };
+    return { global: { name: 'Moyenne globale', data: [], time: [], std: [] }, users: {} };
   }
 
   // Find time bounds
@@ -111,11 +117,12 @@ function calculateAverageBpm(bpmData, intervalMs = 1000) {
 
   // Invalid data
   if (minTimestamp === Infinity) {
-    return { global: { name: 'Moyenne globale', data: [], time: [] }, users: {} };
+    return { global: { name: 'Moyenne globale', data: [], time: [], std: [] }, users: {} };
   }
 
   const averageData = [];
   const averageTime = [];
+  const stdData = [];
   const userSmoothedData = {};
 
   userIds.forEach(id => {
@@ -129,11 +136,11 @@ function calculateAverageBpm(bpmData, intervalMs = 1000) {
   // Loop over all time intervals
   for (let currentTime = minTimestamp; currentTime <= maxTimestamp; currentTime += intervalMs) {
     const intervalEnd = currentTime + intervalMs;
-    const userAverages = []; // All users' avg for this interval
+    const userAverages = [];
 
     userIds.forEach(id => {
       const userData = bpmData[id];
-      const bpmValuesInInterval = []; // All bpm values for user in this interval
+      const bpmValuesInInterval = [];
 
       // Loop through all values, not optimal
       for (let i = 0; i < userData.time.length; i++) {
@@ -166,14 +173,22 @@ function calculateAverageBpm(bpmData, intervalMs = 1000) {
       const globalAverage = userAverages.reduce((sum, avg) => sum + avg, 0) / userAverages.length;
       averageData.push(Math.round(globalAverage * 100) / 100);
       averageTime.push(currentTime);
+
+      // Compute std deviation across users for this interval
+      const variance = userAverages.reduce((sum, avg) => sum + Math.pow(avg - globalAverage, 2), 0) / userAverages.length;
+      let std = Math.round(Math.sqrt(variance) * 100) / 100
+      stdData.push(std);
     }
   }
+
+  // console.log(stdData);
 
   return {
     global: {
       name: 'Moyenne globale',
       data: averageData,
-      time: averageTime
+      time: averageTime,
+      std: stdData
     },
     users: userSmoothedData
   };
@@ -195,7 +210,7 @@ function loadLandmarks(t0) {
         const [, time, label, color] = match;
 
         landmarks.push({
-          timestamp: parseInt(time)*60000 + t0, 
+          timestamp: parseInt(time)*60000 + t0 + 30000, 
           label: label, 
           color: color
         });
@@ -208,6 +223,85 @@ function loadLandmarks(t0) {
   return landmarks;
 }
 
+// Load Synchronie data
+function loadSynchronie(tb) {
+  const synchronieData = [];
+  const synchronieTime = [];
+  const filePath = path.join(__dirname, 'data', 'synchronie.txt');
+
+  try {
+    const fileContent = fs.readFileSync(filePath, 'utf-8');
+    const lines = fileContent.split('\n');
+    
+    for (const line of lines) {
+      // Match pattern like : "[1767782674701] /Synchronie/ (8950.0751953125,)"
+      const match = line.match(/^\[(\d+)\]\s*\/Synchronie\/\s*\(([^)]+)\)$/);
+
+      if (match) {
+        const [, timestamp, sync] = match;
+
+        synchronieData.push(parseInt(sync));
+        synchronieTime.push(parseInt(timestamp));
+      }
+    }
+  } catch (err) {
+    console.error('Error reading or parsing the file:', err);
+  }
+
+  for (let i = 0; i< synchronieTime.length; i++) {
+    synchronieTime[i] = synchronieTime[i] - synchronieTime[0] + tb;
+  }
+
+  const smoothedData = calculateSmoothedSync(synchronieData, synchronieTime, 5000);
+  // console.log(smoothedData.sync);
+
+  return [smoothedData.sync, smoothedData.time];
+}
+
+
+// Compute smoothed synchronie for a given interval
+function calculateSmoothedSync(synchronieData, synchronieTime, intervalMs = 1000) {
+  
+  // Find time bounds
+  let minTimestamp = Math.min(...synchronieTime);
+  let maxTimestamp = Math.max(...synchronieTime);
+
+  const smoothedSyncData = [];
+  const smoothedSyncTime = [];
+
+  // Loop over all time intervals
+  let lastIndex = 0;
+  for (let currentTime = minTimestamp; currentTime <= maxTimestamp; currentTime += intervalMs) {
+    const intervalEnd = currentTime + intervalMs;
+    const synValuesInInterval = []; // All sync values in this interval
+
+    //for (let i = 0; i < synchronieTime.length; i++) {
+    while (lastIndex < synchronieTime.length && synchronieTime[lastIndex] < intervalEnd) {
+        const timestamp = synchronieTime[lastIndex];
+        lastIndex += 1;
+        if (timestamp >= currentTime && timestamp < intervalEnd) {
+          synValuesInInterval.push(synchronieData[lastIndex] / 100);
+        }
+    }
+
+    // Compute avg in this interval
+    if (synValuesInInterval.length > 0) {
+      const avg = synValuesInInterval.reduce((sum, sync) => sum + sync, 0) / synValuesInInterval.length;
+      const roundedAvg = Math.round(avg * 100) / 100;
+      
+      // Only add data AND time when we have actual values
+      smoothedSyncData.push(roundedAvg);
+      smoothedSyncTime.push(currentTime);
+    }
+    // No else clause - skip null intervals entirely
+  }
+
+  return { 
+    sync : smoothedSyncData, 
+    time : smoothedSyncTime 
+  };
+}
+
 
 ////
 // BPM DATA LOADING AT STARTUP
@@ -217,7 +311,9 @@ const data = loadBpmDataFromFiles();
 const NUM_SEATS = data[0];
 const bpmData = data[1];
 const avgBpm = data[2];
+const tbaseline = data[3];
 const landmarks = loadLandmarks(avgBpm.time[0]);
+const synchronie = loadSynchronie(tbaseline);
 
 
 ////
@@ -242,7 +338,10 @@ app.get('/api/bpm/:userId', (req, res) => {
       time: bpmData[userId].time,
       avg: avgBpm.data,
       avgTime: avgBpm.time,
-      landmarks: landmarks
+      std: avgBpm.std,
+      landmarks: landmarks,
+      synchronieData: synchronie[0],
+      synchronieTime: synchronie[1] 
     });
   } else {
     res.status(404).json({ success: false, message: 'Data not found' });
