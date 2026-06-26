@@ -208,7 +208,7 @@
               stdBpm: data.std, 
               landmarks: data.landmarks,
               synchronieData: data.synchronieData,
-              //synchronieTime: data.synchronieTime
+              synchronieTime: data.synchronieTime
             };
             updateChart();
           }
@@ -232,6 +232,7 @@
       const landmarks = currentData.landmarks;
       const profileName = currentData.profile;
       const synchronieData = currentData.synchronieData;
+      const synchronieTime = currentData.synchronieTime;
 
       // Standart deviation
       const stdBpm = currentData.stdBpm;
@@ -251,17 +252,22 @@
         return hours + ':' + minutes.toString().padStart(2, '0');
       });
 
-      // Find how many data points correspond to the offset duration
-      const offsetMs = 60 * 11 * 1000;
-      const offsetIndex = time.findIndex(t => (t - startTime) >= offsetMs);
-      const shiftBy = offsetIndex >= 0 ? offsetIndex : 0;
+      // Remap synchronieTime to time so it ends at the same timestamp
+      const timeEnd = time[time.length - 1];
+      const synchronieTimeEnd = synchronieTime[synchronieTime.length - 1];
+      const timeShift = timeEnd - synchronieTimeEnd;
 
-      // Shift synchronieData: prepend nulls so it starts later
-      const shiftedSynchronie = [
-        ...Array(shiftBy).fill(null),
-        ...synchronieData.slice(0, time.length - shiftBy)   // trim to keep same array length
-      ];
+      const remappedSynchronieTime = synchronieTime.map(t => t + timeShift);
       
+      // Map synchronieData to the time axis
+      const mappedSynchronieData = time.map(timestamp => {
+        const closestIndex = remappedSynchronieTime.findIndex((t, i) => {
+          if (i === remappedSynchronieTime.length - 1) return true;
+          return timestamp >= t && timestamp < remappedSynchronieTime[i + 1];
+        });
+        return closestIndex > 0 ? synchronieData[closestIndex] : null;
+      });
+
       // Define y bounds
       const allBpmValues = [...bpmData, ...avgBpm].filter(val => val !== null);
       const minBpm = Math.min(...allBpmValues);
@@ -315,7 +321,7 @@
         },
         {
           label: 'Synchronie',
-          data: shiftedSynchronie,
+          data: mappedSynchronieData,
           borderColor: '#4BC0C0',
           borderWidth: 2,
           radius: 0,
@@ -345,7 +351,7 @@
               content: landmark.label || 'Event',
               enabled: true,
               position: 'top',
-              yAdjust: -160, // Need to find a trick to make it relative to graph height
+              yAdjust: -130 + index %2 * 25, // Need to find a trick to make it relative to graph height
               backgroundColor: landmark.color || '#FF6384',
               color: '#fff',
               font: {
