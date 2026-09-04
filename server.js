@@ -1,5 +1,5 @@
 // Simple Node.js server to display BPM chart
-const { timeStamp } = require('console');
+const { timeStamp, time } = require('console');
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
@@ -42,6 +42,7 @@ function loadTemplate(templateName, variables = {}) {
 // Load data from vib-eMotion BPM recording
 function loadBpmDataFromFiles() {
   var maxID = 0;
+  var baselineRecord = 0;
   var baselineStop = 0;
   const bpmData = {};
   const filePath = path.join(__dirname, 'data', 'bpm_data.txt');
@@ -53,7 +54,8 @@ function loadBpmDataFromFiles() {
     for (const line of lines) {
       // Match pattern like: "77, /98/ 66 1749735435400.;"
       const match = line.match(/^(\d+),\s*\/(\d+)\/\s+(\d+)\s+(\d+)\.;/);
-      const baseline = line.match(/^(\d+),\s*Stop\s+(\d+)\.\;$/);
+      const record = line.match(/^(\d+),\s*Record\s+(\d+)\.\;$/);
+      const stop = line.match(/^(\d+),\s*Stop\s+(\d+)\.\;$/);
       
       if (match) {
         const [, , id, bpm, timestamp] = match;
@@ -75,9 +77,12 @@ function loadBpmDataFromFiles() {
             time: [parseInt(timestamp)] // Unix timestamp format
           }
         }
-      } else if (baseline) {
-        const [, , timestamp] = baseline;
-        // Search baseline info 
+      // Search baseline info
+      } else if (record) {
+        const [, , timestamp] = record; 
+        baselineRecord = parseInt(timestamp);
+      } else if (stop) {
+        const [, , timestamp] = stop;
         baselineStop = parseInt(timestamp);
       }
     }
@@ -90,13 +95,13 @@ function loadBpmDataFromFiles() {
   }
 
   // Compute average BPM every second (1000 ms)
-  const averageBpm = calculateAverageBpm(bpmData, 5000);
+  const averageBpm = calculateAverageBpm(bpmData, baselineRecord, baselineStop, 5000);
     
   return [maxID, averageBpm.users, averageBpm.global, baselineStop];
 }
 
 // Compute average BPM for a given interval and apply the same temporal smoothing per user
-function calculateAverageBpm(bpmData, intervalMs = 1000) {
+function calculateAverageBpm(bpmData, baselineRecord, baselineStop, intervalMs = 1000) {
   const userIds = Object.keys(bpmData);
 
   if (userIds.length === 0) {
@@ -124,6 +129,10 @@ function calculateAverageBpm(bpmData, intervalMs = 1000) {
   const averageTime = [];
   const stdData = [];
   const userSmoothedData = {};
+  const baseline = {};
+  const hrv = {};
+  const averageHrv = [];
+  const stdHrv = [];
 
   userIds.forEach(id => {
     userSmoothedData[id] = {
@@ -133,10 +142,43 @@ function calculateAverageBpm(bpmData, intervalMs = 1000) {
     };
   });
 
+  userIds.forEach(id => {
+    hrv[id] = {
+      name: id,
+      data: [],
+      time: []
+    };
+  });
+
+  // Compute baseline for each user
+  userIds.forEach(id => {
+      const userData = bpmData[id];
+      const bpmValuesInInterval = [];
+
+      // Loop through all values, not optimal
+      for (let i = 0; i < userData.time.length; i++) {
+        const timestamp = userData.time[i];
+        if (timestamp >= baselineRecord && timestamp < baselineStop) {
+          bpmValuesInInterval.push(userData.data[i]);
+        }
+      }
+
+      // Compute user avg in this interval
+      if (bpmValuesInInterval.length > 0) {
+        const userAverage = bpmValuesInInterval.reduce((sum, bpm) => sum + bpm, 0) / bpmValuesInInterval.length;
+        const roundedAvg = Math.round(userAverage * 100) / 100;
+
+        // Add user's value for this interval
+        baseline[id] = roundedAvg;
+      }
+
+  });
+
   // Loop over all time intervals
   for (let currentTime = minTimestamp; currentTime <= maxTimestamp; currentTime += intervalMs) {
     const intervalEnd = currentTime + intervalMs;
     const userAverages = [];
+    const userHrvValues = [];
 
     userIds.forEach(id => {
       const userData = bpmData[id];
@@ -154,17 +196,23 @@ function calculateAverageBpm(bpmData, intervalMs = 1000) {
       if (bpmValuesInInterval.length > 0) {
         const userAverage = bpmValuesInInterval.reduce((sum, bpm) => sum + bpm, 0) / bpmValuesInInterval.length;
         const roundedAvg = Math.round(userAverage * 100) / 100;
+        const userBaseline = baseline[id]; // scalar value for this user
 
         // Add user's value for this interval
         userAverages.push(roundedAvg);
+        userHrvValues.push(roundedAvg / userBaseline);
 
         // Add smoothed value for this user
         userSmoothedData[id].data.push(roundedAvg);
         userSmoothedData[id].time.push(currentTime);
+        hrv[id].data.push(roundedAvg / userBaseline);
+        hrv[id].time.push(currentTime);
       } else {
         // Add null data to keep time alignment
         userSmoothedData[id].data.push(null);
         userSmoothedData[id].time.push(currentTime);
+        hrv[id].data.push(null);
+        hrv[id].time.push(currentTime);
       }
     });
 
@@ -179,18 +227,37 @@ function calculateAverageBpm(bpmData, intervalMs = 1000) {
       let std = Math.round(Math.sqrt(variance) * 100) / 100
       stdData.push(std);
     }
-  }
 
-  // console.log(stdData);
+    if (userHrvValues.length > 0) {
+      const hrvMean = userHrvValues.reduce((sum, v) => sum + v, 0) / userHrvValues.length;
+      const hrvVariance = userHrvValues.reduce((sum, v) => sum + Math.pow(v - hrvMean, 2), 0) / userHrvValues.length;
+      const hrvStd = Math.sqrt(hrvVariance);
+
+      averageHrv.push(Math.round(hrvMean * 100) / 100);
+      stdHrv.push(Math.round(hrvStd * 100) / 100);
+    } else {
+      averageHrv.push(null);
+      stdHrv.push(null);
+    }
+
+    // TODO: Compute syncrhonie ?
+
+  }
 
   return {
     global: {
       name: 'Moyenne globale',
       data: averageData,
+      //data: averageHrv,
       time: averageTime,
       std: stdData
+      //std: stdHrv
     },
-    users: userSmoothedData
+    users: {
+      bpm: userSmoothedData,
+      baseline: baseline,
+      hrv: hrv
+    }
   };
 }
 
@@ -309,7 +376,7 @@ function calculateSmoothedSync(synchronieData, synchronieTime, intervalMs = 1000
 
 const data = loadBpmDataFromFiles();
 const NUM_SEATS = data[0];
-const bpmData = data[1];
+const bpmData = data[1].bpm;
 const avgBpm = data[2];
 const tbaseline = data[3];
 const landmarks = loadLandmarks(avgBpm.time[0]);

@@ -258,7 +258,7 @@
       const timeShift = timeEnd - synchronieTimeEnd;
 
       const remappedSynchronieTime = synchronieTime.map(t => t + timeShift);
-      
+
       // Map synchronieData to the time axis
       const mappedSynchronieData = time.map(timestamp => {
         const closestIndex = remappedSynchronieTime.findIndex((t, i) => {
@@ -278,37 +278,37 @@
 
       // Define datasets
       datasets = [
+        {
+          label: 'Capteur ' + profileName,
+          data: bpmData,
+          borderColor: '#36A2EB',
+          borderWidth: 2,
+          radius: 0,
+          tension: 0.2,
+          pointHoverRadius: 5
+        },
         // {
-        //   label: 'Capteur ' + profileName,
-        //   data: bpmData,
-        //   borderColor: '#36A2EB',
-        //   borderWidth: 2,
+        //   label: '',
+        //   data: avgUpper,
+        //   borderColor: 'transparent',
+        //   backgroundColor: 'rgba(221, 119, 104, 0.15)',
+        //   fill: '+1',
         //   radius: 0,
+        //   pointHoverRadius: 0,
         //   tension: 0.2,
-        //   pointHoverRadius: 5
+        //   yAxisID: 'y'
         // },
-        {
-          label: '',
-          data: avgUpper,
-          borderColor: 'transparent',
-          backgroundColor: 'rgba(221, 119, 104, 0.15)',
-          fill: '+1',
-          radius: 0,
-          pointHoverRadius: 0,
-          tension: 0.2,
-          yAxisID: 'y'
-        },
-        {
-          label: 'Écart-type public',
-          data: avgLower,
-          borderColor: 'transparent',
-          backgroundColor: 'rgba(221, 119, 104, 0.15)',
-          fill: false,
-          radius: 0,
-          pointHoverRadius: 0,
-          tension: 0.2,
-          yAxisID: 'y'
-        },
+        // {
+        //   label: 'Écart-type public',
+        //   data: avgLower,
+        //   borderColor: 'transparent',
+        //   backgroundColor: 'rgba(221, 119, 104, 0.15)',
+        //   fill: false,
+        //   radius: 0,
+        //   pointHoverRadius: 0,
+        //   tension: 0.2,
+        //   yAxisID: 'y'
+        // },
         {
           label: 'Moyenne public',
           data: avgBpm,
@@ -318,16 +318,16 @@
           tension: 0.2,
           pointHoverRadius: 5,
           yAxisID: 'y'
-        },
-        {
-          label: 'Synchronie',
-          data: mappedSynchronieData,
-          borderColor: '#4BC0C0',
-          borderWidth: 2,
-          radius: 0,
-          tension: 0.2,
-          pointHoverRadius: 5,
-          yAxisID: 'y-right'
+        // },
+        // {
+        //   label: 'Synchronie',
+        //   data: mappedSynchronieData,
+        //   borderColor: '#4BC0C0',
+        //   borderWidth: 2,
+        //   radius: 0,
+        //   tension: 0.2,
+        //   pointHoverRadius: 5,
+        //   yAxisID: 'y-right'
         }
       ];
           
@@ -351,7 +351,7 @@
               content: landmark.label || 'Event',
               enabled: true,
               position: 'top',
-              yAdjust: -130 + index %2 * 25, // Need to find a trick to make it relative to graph height
+              yAdjust: -155 + index %2 * 25, // Need to find a trick to make it relative to graph height
               backgroundColor: landmark.color || '#FF6384',
               color: '#fff',
               font: {
